@@ -1,17 +1,64 @@
+# Edwin
+
+Edwin is an AI-powered assistant designed to help teachers automate and streamline their daily workflows.  
+It combines **agentic AI capabilities** with **deterministic workflows** to balance flexibility, reliability, and efficiency.
+
+---
+
+## 🎯 Problem Statement
+
+Teachers spend significant time on repetitive and administrative tasks such as lesson planning, content preparation, and assignment management.  
+Existing tools are either too rigid or overly autonomous, leading to inefficiency and lack of control.
+
+---
+
+## 💡 Solution
+
+Edwin addresses this by using a **hybrid architecture**:
+- Agentic AI handles open-ended tasks that require reasoning and adaptation.
+- Deterministic workflows manage repetitive, rule-based tasks where predictability is critical.
+
+This approach reduces manual effort while maintaining trust and consistency.
+
+---
+
+## ✨ Key Features
+
+- AI-assisted lesson planning and content generation  
+- Workflow-based task automation for recurring teacher activities  
+- Tool-driven agent execution with controlled decision-making  
+- Context-aware assistance with minimal manual input
+
+---
+
+## 🧠 Architecture Overview
+
+- **LLM Layer**: Handles reasoning, suggestions, and language-based tasks  
+- **Workflow Engine**: Executes predefined, deterministic task flows  
+- **Tool Layer**: APIs and utilities used by agents during execution  
+- **State Management**: Maintains task context and execution state
+
+---
+
+## 🛠 Tech Stack
+
+- TypeScript / JavaScript  
+- Node.js  
+- LLM API integration  
+- Custom workflow orchestration  
+- Firebase
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+git clone https://github.com/your-username/edwin.git
+cd edwin-client
+npm install
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
