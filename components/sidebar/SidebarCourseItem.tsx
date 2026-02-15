@@ -9,6 +9,7 @@ interface Props {
 
 const COURSE_FEATURES = [
   { id: "agent-chat", label: "Agent Chat", icon: <MessageSquare className="w-5 h-5" /> },
+  { id: "resources", label: "Resources", icon: <Database className="w-5 h-5" /> },
   { id: "lesson-planner", label: "Lesson Planner", icon: <BookOpen className="w-5 h-5" /> },
   { id: "content-prep", label: "Content Preparation", icon: <FileText className="w-5 h-5" /> },
   { id: "quiz-gen", label: "Quiz Generation", icon: <BrainCircuit className="w-5 h-5" /> },
