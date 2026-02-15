@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, use } from "react";
-import { Send, User as UserIcon, Bot, Loader2 } from "lucide-react";
+import { Send, User as UserIcon, Bot, Loader2, Plus, Mic, ArrowUp } from "lucide-react";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { getCourseChatHistory } from "@/lib/firebase/firestore";
@@ -126,127 +126,119 @@ export default function AgentChat({ params: paramsPromise }: {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] bg-gray-50 overflow-hidden">
-            {/* Header */}
-            <div className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                        <Bot className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="font-bold text-gray-900">Agent Assistant</h1>
-                        <p className="text-xs text-green-500 font-medium flex items-center gap-1">
-                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            Online
-                        </p>
-                    </div>
+        <div className="flex flex-col h-[calc(100vh-64px)] bg-white overflow-hidden">
+            {/* Chat Area */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 pb-32">
+                <div className="max-w-4xl mx-auto w-full space-y-6">
+                    {isHistoryLoading ? (
+                        <div className="h-full flex items-center justify-center min-h-[400px]">
+                            <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                                <p className="text-sm text-gray-500 font-medium">Loading previous chats...</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {messages.length === 0 && !streamingMessage && (
+                                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 pt-12 min-h-[400px]">
+                                    <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                                        <Bot className="w-10 h-10" />
+                                    </div>
+                                    <div className="max-w-xs">
+                                        <h3 className="text-lg font-bold text-gray-900">How can I help you today?</h3>
+                                        <p className="text-gray-500 text-sm mt-1">
+                                            Ask me anything about your course, lesson plans, or assessments.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {messages.map((m, i) => (
+                                <div
+                                    key={i}
+                                    className={`flex ${m.role === "user" ? "flex-row-reverse" : "flex-row"} w-full`}
+                                >
+                                    <div className={`text-sm leading-relaxed transition-all ${m.role === "user"
+                                        ? "max-w-[85%] md:max-w-[80%] p-3.5 px-5 rounded-3xl bg-[#f4f4f4] text-[#131313]"
+                                        : "w-full text-gray-800 py-2"
+                                        }`}>
+                                        {m.content}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {streamingMessage && (
+                                <div className="flex flex-row w-full">
+                                    <div className="w-full text-gray-800 text-sm leading-relaxed py-2">
+                                        {streamingMessage}
+                                        <span className="inline-block w-1.5 h-4 bg-blue-600 ml-1 animate-pulse align-middle"></span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {isLoading && !streamingMessage && (
+                                <div className="flex flex-row w-full py-2">
+                                    <div className="flex items-center gap-2 text-gray-500">
+                                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                        <span className="text-xs font-medium italic">Edwin is thinking...</span>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                    <div ref={messagesEndRef} />
                 </div>
             </div>
 
-            {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {isHistoryLoading ? (
-                    <div className="h-full flex items-center justify-center">
-                        <div className="flex flex-col items-center gap-2">
-                            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                            <p className="text-sm text-gray-500 font-medium">Loading previous chats...</p>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        {messages.length === 0 && !streamingMessage && (
-                            <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
-                                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
-                                    <Bot className="w-10 h-10" />
-                                </div>
-                                <div className="max-w-xs">
-                                    <h3 className="text-lg font-bold text-gray-900">How can I help you today?</h3>
-                                    <p className="text-gray-500 text-sm mt-1">
-                                        Ask me anything about your course, lesson plans, or assessments.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {messages.map((m, i) => (
-                            <div
-                                key={i}
-                                className={`flex items-start gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}
-                            >
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${m.role === "user" ? "bg-indigo-600" : "bg-white border"
-                                    }`}>
-                                    {m.role === "user" ? (
-                                        <UserIcon className="w-4 h-4 text-white" />
-                                    ) : (
-                                        <Bot className="w-4 h-4 text-blue-600" />
-                                    )}
-                                </div>
-                                <div className={`max-w-[75%] p-4 rounded-2xl text-sm leading-relaxed shadow-sm transition-all ${m.role === "user"
-                                    ? "bg-indigo-600 text-white rounded-tr-none"
-                                    : "bg-white text-gray-800 border rounded-tl-none"
-                                    }`}>
-                                    {m.content}
-                                </div>
-                            </div>
-                        ))}
-
-                        {streamingMessage && (
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-white border flex items-center justify-center flex-shrink-0 shadow-sm">
-                                    <Bot className="w-4 h-4 text-blue-600" />
-                                </div>
-                                <div className="max-w-[75%] bg-white text-gray-800 border p-4 rounded-2xl rounded-tl-none shadow-sm text-sm leading-relaxed">
-                                    {streamingMessage}
-                                    <span className="inline-block w-1 h-4 bg-blue-600 ml-1 animate-pulse"></span>
-                                </div>
-                            </div>
-                        )}
-
-                        {isLoading && !streamingMessage && (
-                            <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-full bg-white border flex items-center justify-center flex-shrink-0 shadow-sm">
-                                    <Bot className="w-4 h-4 text-blue-600" />
-                                </div>
-                                <div className="bg-white border text-gray-500 p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
-                                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                                    <span className="text-xs font-medium">Edwin is thinking...</span>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
-                <div ref={messagesEndRef} />
-            </div>
-
             {/* Input Area */}
-            <div className="bg-white border-t p-4 px-6">
-                <form 
-                    onSubmit={handleSendMessage}
-                    className="max-w-4xl mx-auto flex gap-3 relative"
-                >
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Type your message here..."
-                        disabled={isLoading}
-                        className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 pr-12 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all disabled:opacity-50 font-medium"
-                    />
-                    <button
-                        type="submit"
-                        disabled={!input.trim() || isLoading}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white p-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center"
+            <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-white/80 backdrop-blur-sm px-4 md:px-6 pb-4">
+                <div className="max-w-4xl mx-auto">
+                    <form 
+                        onSubmit={handleSendMessage}
+                        className="relative flex items-center bg-[#f4f4f4] rounded-full px-4 py-1.5 border border-gray-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500"
                     >
-                        {isLoading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                            <Send className="w-5 h-5" />
-                        )}
-                    </button>
-                </form>
-                <p className="text-[10px] text-gray-400 text-center mt-3 uppercase font-bold tracking-widest leading-none">
-                    Edwin AI Agent • Powered by Google Deepmind
-                </p>
+                        <button
+                            type="button"
+                            className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                            <Plus className="w-5 h-5" />
+                        </button>
+                        
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="Type your message here..."
+                            disabled={isLoading}
+                            className="flex-1 bg-transparent border-none px-4 py-2 text-sm focus:ring-0 outline-none disabled:opacity-50 font-medium text-gray-800"
+                        />
+                        
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                            >
+                                <Mic className="w-5 h-5" />
+                            </button>
+                            
+                            <button
+                                type="submit"
+                                disabled={!input.trim() || isLoading}
+                                className="bg-black hover:bg-gray-800 disabled:bg-gray-300 text-white p-2 rounded-full shadow-md transition-all active:scale-95 flex items-center justify-center flex-shrink-0"
+                            >
+                                {isLoading ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <ArrowUp className="w-5 h-5" />
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <p className="text-[11px] text-gray-400 text-center mt-1.5 font-medium">
+                        Edwin can make mistakes. Check important info.
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -51,7 +51,7 @@ export default function Sidebar({ currentCourseId, currentFeatureId }: SidebarPr
   };
 
   return (
-    <div className="w-64 h-screen bg-white border-r flex flex-col">
+    <div className="w-64 h-screen bg-gray-50 border-r flex flex-col">
       <div className="p-4 text-xl font-bold border-b">Edwin AI</div>
 
       <div className="flex-1 overflow-y-auto mt-2">
