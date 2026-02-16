@@ -6,7 +6,7 @@ import Link from "next/link";
 import { onAuthStateChange, signOutUser } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { useRouter, useParams, usePathname } from "next/navigation";
-import { ChevronDown, LayoutDashboard, Settings } from "lucide-react";
+import { ChevronDown, LayoutDashboard, Settings, LogOut } from "lucide-react";
 
 interface Course {
   id: string;
@@ -122,13 +122,22 @@ export default function Sidebar() {
                 {user.email}
               </p>
             </div>
-            <Link 
-              href="/settings"
-              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all flex-shrink-0"
-              title="Settings"
-            >
-              <Settings className="w-5 h-5" />
-            </Link>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleLogout}
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all flex-shrink-0"
+                title="Log Out"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+               <Link 
+                href="/settings"
+                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all flex-shrink-0"
+                title="Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </Link>
+            </div>
           </div>
         )}
       </div>
