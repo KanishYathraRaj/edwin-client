@@ -80,42 +80,17 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-                        Welcome back, <span className="text-blue-600">{user.email?.split('@')[0]}</span>
+                       Dashboard
                     </h1>
                     <p className="text-gray-500 mt-2 font-medium">Manage your courses and AI-powered workflows here.</p>
                 </div>
                 <button
                     onClick={() => setIsCreating(true)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-blue-200 hover:scale-[1.02] transition-all active:scale-[0.98]"
+                    className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
                 >
-                    <Plus className="w-5 h-5" />
-                    Create New Course
+                    <Plus className="w-4 h-4" />
+                    New Course
                 </button>
-            </div>
-
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:shadow-md group">
-                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 mb-4 transition-transform group-hover:scale-110">
-                        <BookOpen className="w-6 h-6" />
-                    </div>
-                    <p className="text-gray-500 text-sm font-bold uppercase tracking-wider">Active Courses</p>
-                    <h3 className="text-3xl font-bold mt-1 text-gray-900">{courses.length}</h3>
-                </div>
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:shadow-md group">
-                    <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-4 transition-transform group-hover:scale-110">
-                        <Clock className="w-6 h-6" />
-                    </div>
-                    <p className="text-gray-500 text-sm font-bold uppercase tracking-wider">Workflows Run</p>
-                    <h3 className="text-3xl font-bold mt-1 text-gray-900">12</h3>
-                </div>
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:shadow-md group">
-                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600 mb-4 transition-transform group-hover:scale-110">
-                        <Users className="w-6 h-6" />
-                    </div>
-                    <p className="text-gray-500 text-sm font-bold uppercase tracking-wider">Students Enrolled</p>
-                    <h3 className="text-3xl font-bold mt-1 text-gray-900">120</h3>
-                </div>
             </div>
 
             {/* Courses Grid */}
@@ -142,47 +117,46 @@ export default function Dashboard() {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {courses.map((course) => (
-                            <div 
+                   <div className="space-y-4">
+                        {courses.map((course, index) => (
+                            <div
                                 key={course.id}
-                                className="group relative bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                                className="flex items-center justify-between p-5 rounded-2xl bg-white/80 backdrop-blur border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-[2px] transition-all duration-200 group"
                             >
-                                <div className="h-32 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 p-6 flex flex-col justify-end transition-colors group-hover:from-blue-500/20 group-hover:to-indigo-500/20">
-                                    <h3 className="text-xl font-bold text-gray-900 line-clamp-2" title={course.name}>
-                                        {course.name}
-                                    </h3>
+                                {/* LEFT */}
+                                <div className="flex items-center gap-4">
+                                    {/* Icon */}
+                                    <div className="w-12 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center font-semibold shadow-sm">
+                                        {course.name.charAt(0).toUpperCase()}
+                                    </div>
+
+                                    {/* Info */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition">
+                                            {course.name}
+                                        </h3>
+                                        <p className="text-xs text-gray-400 mt-0.5">
+                                            Last accessed recently
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="p-6">
-                                    <div className="flex items-center gap-4 text-sm text-gray-500 mb-6 font-semibold">
-                                        <span className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md">
-                                            <Clock className="w-4 h-4 text-gray-400" /> 5 tasks
-                                        </span>
-                                        <span className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md">
-                                            <Users className="w-4 h-4 text-gray-400" /> 32 students
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-3">
-                                        <Link 
-                                            href={`/course/${course.id}/agent-chat`}
-                                            className="flex-1 bg-gray-50 hover:bg-blue-600 hover:text-white text-gray-700 py-3 rounded-xl text-center font-bold text-sm transition-all flex items-center justify-center gap-2 group/btn shadow-sm"
-                                        >
-                                            View Course
-                                            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                                        </Link>
-                                        <button 
-                                            onClick={() => handleDeleteCourse(course.id)}
-                                            disabled={actionLoading === course.id}
-                                            className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                                            title="Delete Course"
-                                        >
-                                            {actionLoading === course.id ? (
-                                                <Loader2 className="w-5 h-5 animate-spin" />
-                                            ) : (
-                                                <Trash2 className="w-5 h-5" />
-                                            )}
-                                        </button>
-                                    </div>
+
+                                {/* RIGHT */}
+                                <div className="flex items-center gap-2">
+                                    <Link
+                                        href={`/course/${course.id}/agent-chat`}
+                                        className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium flex items-center gap-1 transition-all hover:bg-gray-900 hover:text-white"
+                                    >
+                                        Open
+                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    </Link>
+
+                                    <button
+                                        onClick={() => handleDeleteCourse(course.id)}
+                                        className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
                                 </div>
                             </div>
                         ))}

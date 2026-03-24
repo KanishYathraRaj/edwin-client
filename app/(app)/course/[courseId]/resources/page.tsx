@@ -1,10 +1,15 @@
 "use client";
 
-import { useState, useRef, use } from "react";
+import { useState, useRef, useEffect, use } from "react";
 import { FileText, Plus, Trash2, Save, FileUp, AlertCircle, Database, Upload, CheckCircle2 } from "lucide-react";
+import { onAuthStateChange } from "@/lib/firebase/auth";
+import { User } from "firebase/auth";
+import { getCourseDetails } from "@/lib/firebase/firestore";
 
 interface ResourceFile {
-    file: File;
+    file?: File;
+    name: string;
+    size?: number;
     status: 'saved' | 'unsaved';
     id: string; // unique id for list management
 }
@@ -20,14 +25,51 @@ export default function Resources({ params }: {
     
     // Track saving state per item ID or section
     const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
+    const [user, setUser] = useState<User | null>(null);
 
     const syllabusInputRef = useRef<HTMLInputElement>(null);
     const referenceInputRef = useRef<HTMLInputElement>(null);
 
+    useEffect(() => {
+        const unsubscribe = onAuthStateChange((user) => {
+            setUser(user);
+        });
+        return () => unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        async function loadCourseData() {
+            if (user && courseId) {
+                const data = await getCourseDetails(user.uid, courseId);
+                if (data) {
+                    if (data.syllabus) {
+                        setSyllabus({
+                            name: data.syllabus.name,
+                            status: 'saved',
+                            id: 'stored-syllabus'
+                        });
+                    }
+                    if (data.references && Array.isArray(data.references)) {
+                        const storedRefs = data.references.map((ref: any, index: number) => ({
+                            name: ref.name,
+                            status: 'saved',
+                            id: `stored-ref-${index}`
+                        }));
+                        setReferences(storedRefs);
+                    }
+                }
+            }
+        }
+        loadCourseData();
+    }, [user, courseId]);
+
     const handleSyllabusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
             setSyllabus({
-                file: e.target.files[0],
+                file,
+                name: file.name,
+                size: file.size,
                 status: 'unsaved',
                 id: 'syllabus-' + Date.now()
             });
@@ -38,6 +80,8 @@ export default function Resources({ params }: {
         if (e.target.files) {
             const newFiles = Array.from(e.target.files).map(file => ({
                 file,
+                name: file.name,
+                size: file.size,
                 status: 'unsaved' as const,
                 id: 'ref-' + Date.now() + '-' + Math.random()
             }));
@@ -49,15 +93,40 @@ export default function Resources({ params }: {
         if (!syllabus) return;
         setSavingIds(prev => new Set(prev).add(syllabus.id));
         
-        // Simulate save delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setSyllabus(prev => prev ? { ...prev, status: 'saved' } : null);
-        setSavingIds(prev => {
-            const next = new Set(prev);
-            next.delete(syllabus.id);
-            return next;
-        });
+        try {
+            const formData = new FormData();
+            if (syllabus.file) {
+                formData.append('data', syllabus.file);
+            }
+            formData.append('filter', JSON.stringify({
+                courseId: courseId,
+                userId: user?.uid,
+                source: 'syllabus',
+                filename: syllabus.name
+            }));
+
+            const response = await fetch('http://localhost:3000/resource/upload_syllabus', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Server API Error details:", errorData);
+                throw new Error(errorData.details || errorData.error || 'Failed to upload syllabus');
+            }
+            
+            setSyllabus(prev => prev ? { ...prev, status: 'saved' } : null);
+        } catch (error) {
+            console.error("Error saving syllabus:", error);
+            alert("Failed to save syllabus. See console for details.");
+        } finally {
+            setSavingIds(prev => {
+                const next = new Set(prev);
+                next.delete(syllabus.id);
+                return next;
+            });
+        }
     };
 
     const removeSyllabus = () => {
@@ -66,20 +135,47 @@ export default function Resources({ params }: {
     };
 
     const saveReference = async (id: string) => {
+        const refToSave = references.find(r => r.id === id);
+        if (!refToSave) return;
+
         setSavingIds(prev => new Set(prev).add(id));
         
-        // Simulate save delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setReferences(prev => prev.map(ref => 
-            ref.id === id ? { ...ref, status: 'saved' } : ref
-        ));
-        
-        setSavingIds(prev => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
-        });
+        try {
+            const formData = new FormData();
+            if (refToSave.file) {
+                formData.append('references', refToSave.file);
+            }
+            formData.append('filter', JSON.stringify({
+                courseId: courseId,
+                userId: user?.uid,
+                source: 'reference',
+                filename: refToSave.name
+            }));
+
+            const response = await fetch('http://localhost:3000/resource/upload_reference', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Server API Error details:", errorData);
+                throw new Error(errorData.details || errorData.error || 'Failed to upload reference');
+            }
+            
+            setReferences(prev => prev.map(ref => 
+                ref.id === id ? { ...ref, status: 'saved' } : ref
+            ));
+        } catch (error) {
+            console.error("Error saving reference:", error);
+            alert("Failed to save reference. See console for details.");
+        } finally {
+            setSavingIds(prev => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
+        }
     };
 
     const removeReference = (id: string) => {
@@ -131,8 +227,8 @@ export default function Resources({ params }: {
                                         <FileText className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-gray-900">{syllabus.file.name}</p>
-                                        <p className="text-xs text-gray-500">{(syllabus.file.size / 1024).toFixed(1)} KB</p>
+                                        <p className="font-medium text-gray-900">{syllabus.name}</p>
+                                        <p className="text-xs text-gray-500">{syllabus.size ? `${(syllabus.size / 1024).toFixed(1)} KB` : 'Stored'}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -212,9 +308,9 @@ export default function Resources({ params }: {
                                         <FileUp className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-900 truncate max-w-md">{item.file.name}</p>
+                                        <p className="text-sm font-medium text-gray-900 truncate max-w-md">{item.name}</p>
                                         <div className="flex items-center gap-2">
-                                            <p className="text-xs text-gray-500">{(item.file.size / 1024).toFixed(1)} KB</p>
+                                            <p className="text-xs text-gray-500">{item.size ? `${(item.size / 1024).toFixed(1)} KB` : 'Stored'}</p>
                                             {item.status === 'unsaved' && (
                                                 <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Unsaved</span>
                                             )}

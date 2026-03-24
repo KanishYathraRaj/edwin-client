@@ -93,3 +93,121 @@ export async function getCourseChatHistory(userId: string, courseId: string): Pr
         return [];
     }
 }
+/**
+ * Fetch full course details
+ * @param userId - The user's Firebase UID
+ * @param courseId - The ID of the course
+ * @returns Course data or null
+ */
+export async function getCourseDetails(userId: string, courseId: string): Promise<any | null> {
+    try {
+        const { doc, getDoc } = await import("firebase/firestore");
+        const courseRef = doc(db, "users", userId, "courses", courseId);
+        const courseDoc = await getDoc(courseRef);
+
+        if (courseDoc.exists()) {
+            return { id: courseDoc.id, ...courseDoc.data() };
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching course details:", error);
+        return null;
+    }
+}
+
+/**
+ * Save prepared content to a course
+ * @param userId - The user's Firebase UID
+ * @param courseId - The ID of the course
+ * @param content - The generated markdown content
+ * @param title - A title for the content
+ * @param existingId - (Optional) ID of existing document to update
+ */
+export async function savePreparedContent(userId: string, courseId: string, content: string, title: string, existingId?: string): Promise<string | null> {
+    try {
+        const { collection, addDoc, doc, updateDoc, serverTimestamp } = await import("firebase/firestore");
+        
+        if (existingId) {
+            const docRef = doc(db, "users", userId, "courses", courseId, "preparedContent", existingId);
+            await updateDoc(docRef, {
+                content,
+                title,
+                updatedAt: serverTimestamp()
+            });
+            return existingId;
+        } else {
+            const docRef = await addDoc(collection(db, "users", userId, "courses", courseId, "preparedContent"), {
+                content,
+                title,
+                createdAt: serverTimestamp()
+            });
+            return docRef.id;
+        }
+    } catch (error) {
+        console.error("Error saving prepared content:", error);
+        return null;
+    }
+}
+
+/**
+ * Fetch all saved prepared content for a course
+ * @param userId - The user's Firebase UID
+ * @param courseId - The ID of the course
+ * @returns Array of saved content items
+ */
+export async function getSavedPreparedContent(userId: string, courseId: string): Promise<any[]> {
+    try {
+        const { collection, getDocs, query, orderBy } = await import("firebase/firestore");
+        const contentRef = collection(db, "users", userId, "courses", courseId, "preparedContent");
+        const q = query(contentRef, orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+        
+        const items: any[] = [];
+        snapshot.forEach((doc) => {
+            items.push({ id: doc.id, ...doc.data() });
+        });
+        return items;
+    } catch (error) {
+        console.error("Error fetching saved content:", error);
+        return [];
+    }
+}
+
+/**
+ * Delete a saved prepared content item
+ * @param userId - The user's Firebase UID
+ * @param courseId - The ID of the course
+ * @param contentId - The ID of the prepared content document
+ */
+export async function deletePreparedContent(userId: string, courseId: string, contentId: string): Promise<boolean> {
+    try {
+        const { doc, deleteDoc } = await import("firebase/firestore");
+        await deleteDoc(doc(db, "users", userId, "courses", courseId, "preparedContent", contentId));
+        return true;
+    } catch (error) {
+        console.error("Error deleting prepared content:", error);
+        return false;
+    }
+}
+
+/**
+ * Update just the title of a saved prepared content item
+ * @param userId - The user's Firebase UID
+ * @param courseId - The ID of the course
+ * @param contentId - The ID of the document
+ * @param title - The new title
+ */
+export async function updatePreparedContentTitle(userId: string, courseId: string, contentId: string, title: string): Promise<boolean> {
+    try {
+        const { doc, updateDoc, serverTimestamp } = await import("firebase/firestore");
+        const docRef = doc(db, "users", userId, "courses", courseId, "preparedContent", contentId);
+        await updateDoc(docRef, {
+            title,
+            updatedAt: serverTimestamp()
+        });
+        return true;
+    } catch (error) {
+        console.error("Error updating title:", error);
+        return false;
+    }
+}

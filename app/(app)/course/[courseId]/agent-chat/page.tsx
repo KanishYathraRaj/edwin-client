@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect, use } from "react";
-import { Send, User as UserIcon, Bot, Loader2, Plus, Mic, ArrowUp } from "lucide-react";
+import { Send, User as Bot, Loader2, Plus, Mic, ArrowUp } from "lucide-react";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { getCourseChatHistory } from "@/lib/firebase/firestore";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
     role: "user" | "agent";
@@ -162,9 +164,17 @@ export default function AgentChat({ params: paramsPromise }: {
                                         ? "max-w-[85%] md:max-w-[80%] p-3.5 px-5 rounded-3xl bg-[#f4f4f4] text-[#131313]"
                                         : "w-full text-gray-800 py-2"
                                         }`}>
-                                        {m.content}
+                                        <div className="prose prose-sm max-w-none 
+                                                        prose-table:border 
+                                                        prose-th:border 
+                                                        prose-td:border     
+                                                        prose-th:bg-gray-100">
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                {m.content}
+                                            </ReactMarkdown>
+                                        </div>
                                     </div>
-                                </div>
+                                </div> 
                             ))}
 
                             {streamingMessage && (
