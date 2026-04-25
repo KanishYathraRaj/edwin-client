@@ -175,7 +175,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-xl font-bold text-gray-900 italic">Edwin AI</div>
           <p className="text-gray-500 text-sm">
-            © 2026 Edwin AI. Empowring educators with intelligent automation.
+            © 2026 Edwin AI. Empowering educators with intelligent automation.
           </p>
           <div className="flex gap-8 text-gray-400">
             <a href="#" className="hover:text-blue-600 transition-colors">Privacy</a>

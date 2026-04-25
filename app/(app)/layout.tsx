@@ -1,4 +1,5 @@
 import Sidebar from "@/components/sidebar/Sidebar";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function AppLayout({
   children,
@@ -9,7 +10,9 @@ export default function AppLayout({
     <div className="flex h-screen">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </main>
     </div>
   );
