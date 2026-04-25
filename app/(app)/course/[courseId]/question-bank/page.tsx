@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
+import { apiPost } from "@/lib/api";
 
 export default function QuestionBank() {
     const { courseId } = useParams() as { courseId: string };
@@ -25,52 +26,21 @@ export default function QuestionBank() {
 
     // 🚀 Generate questions
     const generateQuestions = async () => {
-    if (!user) {
-        setError("User not logged in");
-        return;
-    }
+        if (!user) { setError("Not logged in"); return; }
+        if (!instruction.trim()) { setError("Please enter an instruction"); return; }
 
-    if (!instruction.trim()) {
-        setError("Please enter an instruction");
-        return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-        const res = await fetch("http://localhost:3000/generate-questions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                courseId,
-                userId: user.uid,
-                instruction
-            }),
-        });
-
-        if (!res.ok) {
-            const text = await res.text();
-            console.error("Backend error:", text);
-            throw new Error("Failed to generate questions");
+        setLoading(true);
+        setError("");
+        try {
+            const data = await apiPost("/generate-questions", { courseId, instruction });
+            setQuestions(data.questionBank?.questions ?? []);
+        } catch (err: any) {
+            console.error(err);
+            setError(err.message || "Failed to generate questions");
+        } finally {
+            setLoading(false);
         }
-
-        const data = await res.json();
-        console.log(data);
-        setQuestions(data.questionBank.questions);
-        // if (Array.isArray(data.questions)) {
-        //     setQuestions(data.questions);
-        // }
-
-    } catch (err) {
-        console.error(err);
-        setError("Failed to generate questions");
-    } finally {
-        setLoading(false);
-    }
-};
+    };
     return (
         <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
             {/* Header */}

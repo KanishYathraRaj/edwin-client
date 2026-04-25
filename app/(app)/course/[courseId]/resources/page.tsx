@@ -5,6 +5,7 @@ import { FileText, Plus, Trash2, Save, FileUp, AlertCircle, Database, Upload, Ch
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { getCourseDetails } from "@/lib/firebase/firestore";
+import { apiPostForm } from "@/lib/api";
 
 interface ResourceFile {
     file?: File;
@@ -105,16 +106,7 @@ export default function Resources({ params }: {
                 filename: syllabus.name
             }));
 
-            const response = await fetch('http://localhost:3000/resource/upload_syllabus', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Server API Error details:", errorData);
-                throw new Error(errorData.details || errorData.error || 'Failed to upload syllabus');
-            }
+            await apiPostForm('/resource/upload_syllabus', formData);
             
             setSyllabus(prev => prev ? { ...prev, status: 'saved' } : null);
         } catch (error) {
@@ -152,16 +144,7 @@ export default function Resources({ params }: {
                 filename: refToSave.name
             }));
 
-            const response = await fetch('http://localhost:3000/resource/upload_reference', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Server API Error details:", errorData);
-                throw new Error(errorData.details || errorData.error || 'Failed to upload reference');
-            }
+            await apiPostForm('/resource/upload_reference', formData);
             
             setReferences(prev => prev.map(ref => 
                 ref.id === id ? { ...ref, status: 'saved' } : ref

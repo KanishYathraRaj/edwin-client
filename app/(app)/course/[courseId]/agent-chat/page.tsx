@@ -7,6 +7,7 @@ import { User } from "firebase/auth";
 import { getCourseChatHistory } from "@/lib/firebase/firestore";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { apiStream } from "@/lib/api";
 
 interface Message {
     role: "user" | "agent";
@@ -62,64 +63,22 @@ export default function AgentChat({ params: paramsPromise }: {
         setStreamingMessage("");
 
         try {
-            const courseId = (await params).courseId;
-            const response = await fetch("http://localhost:3000/agent-chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ 
-                    message: userMessage,
-                    userId: user?.uid,
-                    courseId: courseId
-                }),
-            });
-
-            if (!response.body) {
-                throw new Error("No response body");
-            }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
             let fullMessage = "";
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n').filter(line => line.trim());
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = line.slice(6);
-                        try {
-                            const parsed = JSON.parse(data);
-                            
-                            if (parsed.type === 'chunk') {
-                                fullMessage += parsed.content;
-                                setStreamingMessage(fullMessage);
-                            } else if (parsed.type === 'done') {
-                                setMessages(prev => [...prev, { role: "agent", content: fullMessage }]);
-                                setStreamingMessage("");
-                            } else if (parsed.type === 'error') {
-                                setMessages(prev => [...prev, { 
-                                    role: "agent", 
-                                    content: "Sorry, I encountered an error. Please try again." 
-                                }]);
-                                setStreamingMessage("");
-                            }
-                        } catch (e) {
-                            // Skip invalid JSON
-                        }
-                    }
+            await apiStream(
+                "/agent-chat",
+                { message: userMessage, courseId: params.courseId },
+                (chunk) => {
+                    fullMessage += chunk;
+                    setStreamingMessage(fullMessage);
                 }
-            }
-        } catch (error) {
+            );
+            setMessages(prev => [...prev, { role: "agent", content: fullMessage }]);
+            setStreamingMessage("");
+        } catch (error: any) {
             console.error("Chat Error:", error);
-            setMessages(prev => [...prev, { 
-                role: "agent", 
-                content: "Failed to connect to the agent. Make sure the server is running." 
+            setMessages(prev => [...prev, {
+                role: "agent",
+                content: "Sorry, I couldn't reach the assistant. Please try again.",
             }]);
             setStreamingMessage("");
         } finally {

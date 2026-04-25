@@ -5,6 +5,7 @@ import { BookOpen, Sparkles, ChevronRight, CheckCircle2, Loader2, RefreshCw } fr
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { getCourseDetails } from "@/lib/firebase/firestore";
+import { apiPost } from "@/lib/api";
 
 interface Topic {
     unit: string;
@@ -53,33 +54,17 @@ export default function LessonPlanner({ params }: {
         if (!user) return;
         setIsPlanning(true);
         try {
-            const response = await fetch("http://localhost:3000/plan-lesson", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    userId: user.uid,
-                    courseId: courseId,
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to plan lesson");
-            }
-
-            const data = await response.json();
-            // The API returns { success: true, syllabus: { syllabus: [...] } }
-            if (data.syllabus && data.syllabus.syllabus) {
+            const data = await apiPost("/plan-lesson", { courseId });
+            if (data.syllabus?.syllabus) {
                 setSyllabusData(data.syllabus);
             } else if (Array.isArray(data.syllabus)) {
                 setSyllabusData({ syllabus: data.syllabus });
             } else {
-                throw new Error("Invalid response format");
+                throw new Error("Unexpected response format");
             }
         } catch (error) {
             console.error("Error planning lesson:", error);
-            alert("Failed to plan lesson. Please ensure you have uploaded a syllabus in the Resources page.");
+            alert("Failed to generate lesson plan. Please ensure you have uploaded a syllabus in the Resources page.");
         } finally {
             setIsPlanning(false);
         }

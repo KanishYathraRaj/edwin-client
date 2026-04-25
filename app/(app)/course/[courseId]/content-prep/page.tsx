@@ -5,6 +5,7 @@ import { Sparkles, CheckCircle2, Loader2, BookOpen, ChevronRight, Layout, Messag
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { getCourseDetails, savePreparedContent, getSavedPreparedContent, deletePreparedContent, updatePreparedContentTitle } from "@/lib/firebase/firestore";
+import { apiPost } from "@/lib/api";
 
 interface Topic {
     unit: string;
@@ -177,26 +178,11 @@ export default function ContentPrep({ params }: {
 
         setIsGenerating(true);
         try {
-            const response = await fetch("http://localhost:3000/content-prep", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    userId: user.uid,
-                    courseId: courseId,
-                    topics: selectedTopicNames,
-                    description: description
-                }),
+            const data = await apiPost("/content-prep", {
+                courseId,
+                topics: selectedTopicNames,
+                description,
             });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error("Server error:", errorData);
-                throw new Error(errorData.error || errorData.details || "Failed to start content generation");
-            }
-
-            const data = await response.json();
             
             // Auto-show the new content
             if (data.content) {
