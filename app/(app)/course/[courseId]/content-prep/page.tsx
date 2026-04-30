@@ -612,13 +612,13 @@ export default function ContentPrep({
                                                     · {file.content?.length || 0} chars
                                                 </span>
                                             </div>
-                                            <div
+                                            <button
                                                 onClick={(e) => handleDeleteFile(e, file.id)}
                                                 className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all shrink-0"
                                                 title="Delete file"
                                             >
                                                 <Trash2 className="w-5 h-5" />
-                                            </div>
+                                            </button>
                                         </button>
                                     ))}
                                 </div>

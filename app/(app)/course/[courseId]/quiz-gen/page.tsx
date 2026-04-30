@@ -16,6 +16,10 @@ type Question = MCQQuestion | TFQuestion | SAQuestion;
 
 interface Quiz { title: string; difficulty: string; questions: Question[]; }
 
+function normalizeLetter(s: string): string {
+    return s.match(/^([A-D])[.)]/i)?.[1]?.toUpperCase() ?? s[0]?.toUpperCase() ?? s;
+}
+
 const DIFFICULTY_COLORS: Record<Difficulty, string> = {
     easy:   "bg-green-100 text-green-700 border-green-200",
     medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -68,9 +72,9 @@ export default function QuizGen({ params }: { params: Promise<{ courseId: string
         let correct = 0;
         quiz.questions.forEach((q, i) => {
             const userAns = answers[i];
-            if (q.type === "mcq" && userAns === q.answer) correct++;
+            if (q.type === "mcq" && normalizeLetter(String(userAns)) === normalizeLetter(q.answer)) correct++;
             if (q.type === "tf" && userAns === q.answer) correct++;
-            if (q.type === "short") correct++; // Self-graded
+            // short-answer is self-graded, not auto-scored
         });
         setScore(correct);
         setSubmitted(true);
@@ -292,9 +296,9 @@ function QuestionCard({
             {question.type === "mcq" && (
                 <div className="space-y-2 ml-9">
                     {question.options.map((opt, oi) => {
-                        const optLetter = opt[0];
-                        const selected = userAnswer === optLetter;
-                        const isAnswer = submitted && optLetter === question.answer;
+                        const optLetter = normalizeLetter(opt);
+                        const selected = normalizeLetter(String(userAnswer ?? "")) === optLetter;
+                        const isAnswer = submitted && optLetter === normalizeLetter(question.answer);
                         const isWrong  = submitted && selected && !isAnswer;
                         return (
                             <button
