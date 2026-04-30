@@ -157,14 +157,19 @@ export async function savePreparedContent(userId: string, courseId: string, cont
  */
 export async function getSavedPreparedContent(userId: string, courseId: string): Promise<any[]> {
     try {
-        const { collection, getDocs, query, orderBy } = await import("firebase/firestore");
+        const { collection, getDocs, query } = await import("firebase/firestore");
         const contentRef = collection(db, "users", userId, "courses", courseId, "preparedContent");
-        const q = query(contentRef, orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-        
+        const snapshot = await getDocs(query(contentRef));
+
         const items: any[] = [];
         snapshot.forEach((doc) => {
             items.push({ id: doc.id, ...doc.data() });
+        });
+        // Sort client-side so docs without createdAt are still included
+        items.sort((a, b) => {
+            const aTime = a.updatedAt?.seconds ?? a.createdAt?.seconds ?? 0;
+            const bTime = b.updatedAt?.seconds ?? b.createdAt?.seconds ?? 0;
+            return bTime - aTime;
         });
         return items;
     } catch (error) {

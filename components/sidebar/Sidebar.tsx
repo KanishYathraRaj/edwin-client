@@ -51,6 +51,8 @@ export default function Sidebar() {
       targetPath = `/course/${newCourseId}/quiz-gen`;
     } else if (pathname.includes("/question-bank")) {
       targetPath = `/course/${newCourseId}/question-bank`;
+    } else if (pathname.includes("/resources")) {
+      targetPath = `/course/${newCourseId}/resources`;
     }
 
     router.push(targetPath);
