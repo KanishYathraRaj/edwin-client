@@ -23,7 +23,6 @@ export default function Auth() {
                 ? await signInWithEmail(email, password) 
                 : await signUpWithEmail(email, password);
 
-            console.log("Auth success:", userCredential.user);
             router.push("/dashboard");
         } catch (err: any) {
             setError(err.message);

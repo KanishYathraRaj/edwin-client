@@ -1,22 +1,34 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChange } from "@/lib/firebase/auth";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChange((user) => {
       if (user) {
         router.push("/dashboard");
+      } else {
+        setAuthChecked(true);
       }
     });
 
     return () => unsubscribe();
   }, [router]);
+
+  if (!authChecked) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   const workflows = [
     {
