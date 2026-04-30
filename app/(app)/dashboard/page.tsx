@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { getUserCourses, createCourse, deleteCourse, Course } from "@/lib/firebase/firestore";
 import { User } from "firebase/auth";
-import { Plus, Trash2, BookOpen, Clock, Users, ArrowRight, Loader2 } from "lucide-react";
+import { Plus, Trash2, BookOpen, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export default function Dashboard() {
@@ -14,6 +14,7 @@ export default function Dashboard() {
     const [isCreating, setIsCreating] = useState(false);
     const [newCourseTitle, setNewCourseTitle] = useState("");
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [createError, setCreateError] = useState("");
 
     useEffect(() => {
         const unsubscribe = onAuthStateChange(async (currentUser) => {
@@ -33,13 +34,21 @@ export default function Dashboard() {
         if (!user || !newCourseTitle.trim()) return;
 
         setActionLoading("create");
-        const newCourse = await createCourse(user.uid, newCourseTitle);
-        if (newCourse) {
-            setCourses([...courses, newCourse]);
-            setNewCourseTitle("");
-            setIsCreating(false);
+        setCreateError("");
+        try {
+            const newCourse = await createCourse(user.uid, newCourseTitle.trim());
+            if (newCourse) {
+                setCourses(prev => [...prev, newCourse]);
+                setNewCourseTitle("");
+                setIsCreating(false);
+            } else {
+                setCreateError("Failed to create course. Please try again.");
+            }
+        } catch {
+            setCreateError("An unexpected error occurred. Please try again.");
+        } finally {
+            setActionLoading(null);
         }
-        setActionLoading(null);
     };
 
     const handleDeleteCourse = async (courseId: string) => {
@@ -59,17 +68,6 @@ export default function Dashboard() {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-            </div>
-        );
-    }
-
-    if (!user) {
-        return (
-            <div className="text-center p-12">
-                <h2 className="text-2xl font-bold text-gray-900">Please log in to view your dashboard</h2>
-                <Link href="/auth" className="text-blue-600 hover:underline mt-4 inline-block font-medium">
-                    Go to Login
-                </Link>
             </div>
         );
     }
@@ -174,6 +172,11 @@ export default function Dashboard() {
                         </div>
                         
                         <form onSubmit={handleCreateCourse} className="space-y-4">
+                            {createError && (
+                                <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm font-medium border border-red-100">
+                                    {createError}
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
                                     Course Title

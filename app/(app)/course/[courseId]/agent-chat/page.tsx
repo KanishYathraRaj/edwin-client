@@ -27,15 +27,22 @@ export default function AgentChat({ params: paramsPromise }: {
     const [streamingMessage, setStreamingMessage] = useState("");
     const [user, setUser] = useState<User | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const historyLoadedRef = useRef(false);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
     useEffect(() => {
+        historyLoadedRef.current = false;
+    }, [params.courseId]);
+
+    useEffect(() => {
         const unsubscribe = onAuthStateChange(async (currentUser) => {
             setUser(currentUser);
-            if (currentUser) {
+            // Only load history once per courseId — prevents reload on Firebase token refresh
+            if (currentUser && !historyLoadedRef.current) {
+                historyLoadedRef.current = true;
                 const history = await getCourseChatHistory(currentUser.uid, params.courseId);
                 const formattedMessages: Message[] = history.map((msg: any) => ({
                     role: msg.role === "system" ? "agent" : "user",
@@ -87,9 +94,9 @@ export default function AgentChat({ params: paramsPromise }: {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] bg-white overflow-hidden">
+        <div className="flex flex-col h-full bg-white">
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 pb-32">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 pb-4">
                 <div className="max-w-4xl mx-auto w-full space-y-6">
                     {isHistoryLoading ? (
                         <div className="h-full flex items-center justify-center min-h-[400px]">
@@ -160,7 +167,7 @@ export default function AgentChat({ params: paramsPromise }: {
             </div>
 
             {/* Input Area */}
-            <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-white/80 backdrop-blur-sm px-4 md:px-6 pb-4">
+            <div className="shrink-0 bg-white/80 backdrop-blur-sm border-t border-gray-100 px-4 md:px-6 pb-4 pt-2">
                 <div className="max-w-4xl mx-auto">
                     <form 
                         onSubmit={handleSendMessage}

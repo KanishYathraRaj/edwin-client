@@ -5,7 +5,7 @@ import { FileText, Plus, Trash2, Save, FileUp, AlertCircle, Database, Upload, Ch
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { getCourseDetails } from "@/lib/firebase/firestore";
-import { apiPostForm } from "@/lib/api";
+import { apiPostForm, apiDelete } from "@/lib/api";
 
 interface ResourceFile {
     file?: File;
@@ -121,8 +121,14 @@ export default function Resources({ params }: {
         }
     };
 
-    const removeSyllabus = () => {
-        // If saved, we would normally delete from server here
+    const removeSyllabus = async () => {
+        if (syllabus?.status === 'saved') {
+            try {
+                await apiDelete(`/resource/remove_syllabus?courseId=${encodeURIComponent(courseId)}`);
+            } catch (e) {
+                console.error('Failed to delete syllabus from server:', e);
+            }
+        }
         setSyllabus(null);
     };
 
@@ -161,9 +167,16 @@ export default function Resources({ params }: {
         }
     };
 
-    const removeReference = (id: string) => {
-        // If saved, delete from server. If unsaved, just remove from list.
-        setReferences(prev => prev.filter(ref => ref.id !== id));
+    const removeReference = async (id: string) => {
+        const ref = references.find(r => r.id === id);
+        if (ref?.status === 'saved') {
+            try {
+                await apiDelete(`/resource/remove_reference?courseId=${encodeURIComponent(courseId)}&filename=${encodeURIComponent(ref.name)}`);
+            } catch (e) {
+                console.error('Failed to delete reference from server:', e);
+            }
+        }
+        setReferences(prev => prev.filter(r => r.id !== id));
     };
 
     return (
