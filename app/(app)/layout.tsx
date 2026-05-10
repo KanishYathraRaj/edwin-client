@@ -5,12 +5,25 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import Sidebar from "@/components/sidebar/Sidebar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { Loader2 } from "lucide-react";
+import { Loader2, PanelLeftOpen } from "lucide-react";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const [authChecked, setAuthChecked] = useState(false);
     const [authed, setAuthed] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
     const router = useRouter();
+
+    useEffect(() => {
+        const stored = localStorage.getItem("sidebarCollapsed");
+        if (stored === "true") setCollapsed(true);
+    }, []);
+
+    const toggleSidebar = () => {
+        setCollapsed(c => {
+            localStorage.setItem("sidebarCollapsed", String(!c));
+            return !c;
+        });
+    };
 
     useEffect(() => {
         const unsubscribe = onAuthStateChange((user) => {
@@ -36,8 +49,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex h-screen overflow-hidden">
-            <Sidebar />
-            <main className="flex-1 overflow-y-auto">
+            <div className={`relative flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${collapsed ? "w-0" : "w-64"}`}>
+                <Sidebar onToggle={toggleSidebar} />
+            </div>
+            <main className="flex-1 overflow-y-auto relative">
+                {collapsed && (
+                    <button
+                        onClick={toggleSidebar}
+                        aria-label="Open sidebar"
+                        className="absolute top-4 left-4 z-10 p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-gray-800 hover:shadow-sm transition-all"
+                    >
+                        <PanelLeftOpen className="w-4 h-4" />
+                    </button>
+                )}
                 <ErrorBoundary>
                     {children}
                 </ErrorBoundary>

@@ -7,11 +7,13 @@ import Link from "next/link";
 import { onAuthStateChange, signOutUser } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { useRouter, useParams, usePathname } from "next/navigation";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, PanelLeftClose } from "lucide-react";
 
 interface Course { id: string; name: string; }
 
-export default function Sidebar() {
+interface Props { onToggle: () => void; }
+
+export default function Sidebar({ onToggle }: Props) {
     const [courses, setCourses] = useState<Course[]>([]);
     const [user, setUser] = useState<User | null>(null);
     const router = useRouter();
@@ -46,7 +48,16 @@ export default function Sidebar() {
         <div className="w-64 h-screen bg-gray-50 border-r flex flex-col font-sans">
             {/* Header */}
             <div className="px-4 pt-5 pb-4 border-b bg-white space-y-3">
-                <p className="text-lg font-extrabold text-gray-900 tracking-tight px-1">Edwin AI</p>
+                <div className="flex items-center justify-between px-1">
+                    <p className="text-lg font-extrabold text-gray-900 tracking-tight">Edwin AI</p>
+                    <button
+                        onClick={onToggle}
+                        aria-label="Collapse sidebar"
+                        className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+                    >
+                        <PanelLeftClose className="w-4 h-4" />
+                    </button>
+                </div>
                 <CourseSwitcher
                     courses={courses}
                     currentCourseId={currentCourseId}
