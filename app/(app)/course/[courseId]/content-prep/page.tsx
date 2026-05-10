@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, use } from "react";
 import {
     Loader2, BookOpen, ChevronUp, Download,
     Save, MoreVertical, FilePlus, FolderOpen,
-    X, FileText, Trash2, ArrowUp, Check,
+    X, FileText, Trash2, ArrowUp, Check, Pencil,
 } from "lucide-react";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
@@ -358,11 +358,12 @@ export default function ContentPrep({
                         ) : (
                             <button
                                 onClick={() => setIsEditingTitle(true)}
-                                className="px-3 py-1.5 rounded-lg text-[14px] font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all truncate max-w-[200px] md:max-w-xs flex items-center gap-2 shadow-sm z-50 relative"
+                                className="px-3 py-1.5 rounded-lg text-[14px] font-bold text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-200 hover:border-blue-300 transition-all truncate max-w-[200px] md:max-w-xs flex items-center gap-2 shadow-sm z-50 relative group"
                                 title="Click to rename"
                             >
                                 <FileText className="w-4 h-4 text-blue-500 shrink-0" />
                                 {currentTitle || "Untitled"}
+                                <Pencil className="w-3 h-3 text-gray-300 group-hover:text-gray-500 shrink-0 transition-colors" />
                             </button>
                         )}
                         {currentFileId && !saveSuccess && (
@@ -550,10 +551,11 @@ export default function ContentPrep({
                                         type="submit"
                                         disabled={isGenerating || selectedTopicNames.length === 0}
                                         aria-label="Generate content"
+                                        title={selectedTopicNames.length === 0 ? "Select at least one topic first" : "Generate content"}
                                         className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 ${
                                             selectedTopicNames.length > 0 && !isGenerating
-                                                ? "bg-[#D1D5DB] text-gray-700 hover:bg-gray-300 shadow-sm"
-                                                : "bg-[#e4e4e7] text-gray-400"
+                                                ? "bg-gray-900 text-white hover:bg-gray-700 shadow-sm"
+                                                : "bg-[#e4e4e7] text-gray-400 cursor-not-allowed"
                                         }`}
                                     >
                                         {isGenerating ? (

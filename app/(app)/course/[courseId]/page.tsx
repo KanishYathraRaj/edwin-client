@@ -228,6 +228,28 @@ export default function CourseOverview({ params }: { params: Promise<{ courseId:
                 </div>
             </div>
 
+            {/* Next step CTA */}
+            {!isComplete && (() => {
+                const next = PROGRESS_STEPS.find(f => !f.isDone(stats));
+                if (!next) return null;
+                const Icon = next.icon;
+                return (
+                    <Link
+                        href={`/course/${courseId}/${next.id}`}
+                        className="flex items-center gap-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-5 py-4 transition-all group shadow-sm shadow-blue-200"
+                    >
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold uppercase tracking-wider text-blue-200">Recommended next step</p>
+                            <p className="font-semibold text-white">Go to {next.label}</p>
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-blue-300 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                    </Link>
+                );
+            })()}
+
             {/* Feature grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {FEATURE_CARDS.map(feature => {
@@ -237,7 +259,11 @@ export default function CourseOverview({ params }: { params: Promise<{ courseId:
                         <Link
                             key={feature.id}
                             href={`/course/${courseId}/${feature.id}`}
-                            className="group bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md hover:border-gray-200 hover:-translate-y-0.5 transition-all duration-200 flex flex-col gap-3"
+                            className={`group rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col gap-3 border ${
+                                done
+                                    ? "bg-green-50/50 border-green-200 hover:border-green-300"
+                                    : "bg-white border-gray-100 hover:border-gray-200"
+                            }`}
                         >
                             <div className="flex items-start justify-between">
                                 <div className={`w-10 h-10 ${feature.bgColor} rounded-xl flex items-center justify-center`}>

@@ -66,9 +66,21 @@ export default function Resources({ params }: {
         loadCourseData();
     }, [user, courseId]);
 
+    const MAX_FILE_MB = 50;
+    const ALLOWED_TYPES = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"];
+
+    const validateFile = (file: File): string | null => {
+        if (file.size > MAX_FILE_MB * 1024 * 1024) return `File too large. Max ${MAX_FILE_MB}MB allowed.`;
+        if (!ALLOWED_TYPES.includes(file.type) && !file.name.match(/\.(pdf|docx?|txt)$/i)) return "Unsupported file type. Use PDF, DOCX, or TXT.";
+        return null;
+    };
+
     const handleSyllabusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
+            const err = validateFile(file);
+            if (err) { setSaveError(err); return; }
+            setSaveError("");
             setSyllabus({
                 file,
                 name: file.name,
@@ -81,14 +93,27 @@ export default function Resources({ params }: {
 
     const handleReferenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            const newFiles = Array.from(e.target.files).map(file => ({
+            const errors: string[] = [];
+            const newFiles = Array.from(e.target.files).filter(file => {
+                const err = validateFile(file);
+                if (err) { errors.push(`${file.name}: ${err}`); return false; }
+                return true;
+            }).map(file => ({
                 file,
                 name: file.name,
                 size: file.size,
                 status: 'unsaved' as const,
                 id: 'ref-' + Date.now() + '-' + Math.random()
             }));
+            if (errors.length > 0) setSaveError(errors[0]);
             setReferences(prev => [...prev, ...newFiles]);
+        }
+    };
+
+    const saveAllUnsaved = async () => {
+        const unsaved = references.filter(r => r.status === 'unsaved');
+        for (const ref of unsaved) {
+            await saveReference(ref.id);
         }
     };
 
@@ -305,10 +330,19 @@ export default function Resources({ params }: {
                         <h2 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
                             <Database className="w-5 h-5 text-blue-600" />
                             Reference Materials
+                            <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                {references.length}
+                            </span>
                         </h2>
-                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                            {references.length} Items
-                        </span>
+                        {references.some(r => r.status === 'unsaved') && (
+                            <button
+                                onClick={saveAllUnsaved}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                            >
+                                <Save className="w-3.5 h-3.5" />
+                                Save All
+                            </button>
+                        )}
                     </div>
 
                     <div className="space-y-2">

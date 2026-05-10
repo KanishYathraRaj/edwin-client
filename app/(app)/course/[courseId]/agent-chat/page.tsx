@@ -27,6 +27,8 @@ export default function AgentChat({ params: paramsPromise }: {
     const [streamingMessage, setStreamingMessage] = useState("");
     const [user, setUser] = useState<User | null>(null);
     const [isListening, setIsListening] = useState(false);
+    const [courseTitle, setCourseTitle] = useState("");
+    const [failedMessage, setFailedMessage] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const historyLoadedRef = useRef(false);
     const recognitionRef = useRef<any>(null);
@@ -45,6 +47,9 @@ export default function AgentChat({ params: paramsPromise }: {
             // Only load history once per courseId — prevents reload on Firebase token refresh
             if (currentUser && !historyLoadedRef.current) {
                 historyLoadedRef.current = true;
+                const { getCourseDetails } = await import("@/lib/firebase/firestore");
+                const details = await getCourseDetails(currentUser.uid, params.courseId);
+                setCourseTitle(details?.title || "");
                 const history = await getCourseChatHistory(currentUser.uid, params.courseId);
                 const formattedMessages: Message[] = history.map((msg: any) => ({
                     role: msg.role === "system" ? "agent" : "user",
@@ -109,6 +114,7 @@ export default function AgentChat({ params: paramsPromise }: {
             setStreamingMessage("");
         } catch (error: any) {
             console.error("Chat Error:", error);
+            setFailedMessage(userMessage);
             setMessages(prev => [...prev, {
                 role: "agent",
                 content: "Sorry, I couldn't reach the assistant. Please try again.",
@@ -141,7 +147,9 @@ export default function AgentChat({ params: paramsPromise }: {
                                     <div className="max-w-xs">
                                         <h3 className="text-lg font-bold text-gray-900">How can I help you today?</h3>
                                         <p className="text-gray-500 text-sm mt-1">
-                                            Ask me anything about your course, lesson plans, or assessments.
+                                            {courseTitle
+                                                ? `Ask me anything about ${courseTitle} — lesson plans, materials, or assessments.`
+                                                : "Ask me anything about your course, lesson plans, or assessments."}
                                         </p>
                                     </div>
                                 </div>
@@ -194,6 +202,17 @@ export default function AgentChat({ params: paramsPromise }: {
 
             {/* Input Area */}
             <div className="shrink-0 bg-white/80 backdrop-blur-sm border-t border-gray-100 px-4 md:px-6 pb-4 pt-2">
+                {failedMessage && (
+                    <div className="max-w-4xl mx-auto mb-2 flex items-center gap-2 text-xs text-red-600 font-medium">
+                        <span>Message failed.</span>
+                        <button
+                            onClick={() => { setInput(failedMessage); setFailedMessage(""); }}
+                            className="underline hover:text-red-800 transition-colors"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                )}
                 <div className="max-w-4xl mx-auto">
                     <form 
                         onSubmit={handleSendMessage}
@@ -209,6 +228,11 @@ export default function AgentChat({ params: paramsPromise }: {
                         />
                         
                         <div className="flex items-center gap-1">
+                            {isListening && (
+                                <span className="text-xs text-red-500 font-semibold animate-pulse mr-1">
+                                    Recording...
+                                </span>
+                            )}
                             <button
                                 type="button"
                                 onClick={handleVoiceInput}

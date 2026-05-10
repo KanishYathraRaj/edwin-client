@@ -96,7 +96,6 @@ export default function QuestionBank({ params }: { params: Promise<{ courseId: s
     const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
     const [instruction, setInstruction]   = useState("");
     const [isTopicOpen, setIsTopicOpen]   = useState(false);
-    const [isPanelOpen, setIsPanelOpen]   = useState(true);
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [generateError, setGenerateError] = useState("");
@@ -107,6 +106,14 @@ export default function QuestionBank({ params }: { params: Promise<{ courseId: s
     const [revealed, setRevealed] = useState<Set<string>>(new Set());
     const [isClearing, setIsClearing] = useState(false);
     const [copiedExport, setCopiedExport] = useState(false);
+    const [isPanelOpen, setIsPanelOpen] = useState(() => {
+        if (typeof window === "undefined") return true;
+        try { return JSON.parse(localStorage.getItem("qbPanelOpen") ?? "true"); } catch { return true; }
+    });
+
+    useEffect(() => {
+        try { localStorage.setItem("qbPanelOpen", JSON.stringify(isPanelOpen)); } catch {}
+    }, [isPanelOpen]);
 
     useEffect(() => {
         const unsub = onAuthStateChange(u => setUser(u));
@@ -286,7 +293,7 @@ export default function QuestionBank({ params }: { params: Promise<{ courseId: s
             {/* ── Generation Panel ───────────────────────────────────────── */}
             <div className="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
                 <button
-                    onClick={() => setIsPanelOpen(p => !p)}
+                    onClick={() => setIsPanelOpen((p: boolean) => !p)}
                     className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-100 transition-colors"
                 >
                     <div className="flex items-center gap-2">
@@ -506,17 +513,40 @@ export default function QuestionBank({ params }: { params: Promise<{ courseId: s
                     </div>
                 </div>
             ) : (
-                <div className="space-y-3">
-                    {filtered.map((q, idx) => (
-                        <QuestionCard
-                            key={q.id}
-                            index={idx + 1}
-                            question={q}
-                            isRevealed={revealed.has(q.id)}
-                            onToggleReveal={() => toggleReveal(q.id)}
-                            onDelete={() => handleDelete(q.id)}
-                        />
-                    ))}
+                <div className="space-y-6">
+                    {(() => {
+                        const grouped = filtered.reduce((acc, q) => {
+                            const key = q.topic || "General";
+                            if (!acc[key]) acc[key] = [];
+                            acc[key].push(q);
+                            return acc;
+                        }, {} as Record<string, Question[]>);
+                        let globalIdx = 0;
+                        return Object.entries(grouped).map(([topic, qs]) => (
+                            <div key={topic} className="space-y-3">
+                                {Object.keys(grouped).length > 1 && (
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">{topic}</span>
+                                        <div className="flex-1 h-px bg-gray-100" />
+                                        <span className="text-xs text-gray-400 font-medium">{qs.length}</span>
+                                    </div>
+                                )}
+                                {qs.map(q => {
+                                    globalIdx++;
+                                    return (
+                                        <QuestionCard
+                                            key={q.id}
+                                            index={globalIdx}
+                                            question={q}
+                                            isRevealed={revealed.has(q.id)}
+                                            onToggleReveal={() => toggleReveal(q.id)}
+                                            onDelete={() => handleDelete(q.id)}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        ));
+                    })()}
                 </div>
             )}
         </div>

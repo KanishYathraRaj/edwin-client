@@ -99,10 +99,10 @@ export default function LessonPlanner({ params }: {
                 </div>
                 
                 {syllabusData && (
-                    <button 
+                    <button
                         onClick={handleStartPlanning}
                         disabled={isPlanning}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-sm active:scale-95 disabled:opacity-50"
                     >
                         <RefreshCw className={`w-4 h-4 ${isPlanning ? 'animate-spin' : ''}`} />
                         Regenerate Plan
@@ -162,15 +162,16 @@ export default function LessonPlanner({ params }: {
 
                     <div className="space-y-12">
                         {syllabusData.syllabus.map((unit, unitIdx) => (
-                            <div key={unitIdx} 
-                                className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all"
+                            <div key={unitIdx}
+                                className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all"
                             >
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">Unit {unitIdx + 1}</p>
-                                    <h3 className="text-lg font-semibold text-gray-900">
-                                        {unit.unit}
-                                    </h3>
+                                <div className="bg-blue-50 border-b border-blue-100 px-6 py-4 flex items-center gap-3">
+                                    <div className="w-7 h-7 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                                        {unitIdx + 1}
+                                    </div>
+                                    <h3 className="text-base font-bold text-blue-900">{unit.unit}</h3>
                                 </div>
+                                <div className="p-6">
                                 
                                 <ul className="grid gap-4 ml-1">
                                     {unit.topics.map((topic, topicIdx) => {
@@ -198,6 +199,7 @@ export default function LessonPlanner({ params }: {
                                         );
                                     })}
                                 </ul>
+                                </div>
                             </div>
                         ))}
                     </div>

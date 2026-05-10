@@ -202,7 +202,12 @@ export default function QuizGen({ params }: { params: Promise<{ courseId: string
                                 <button
                                     onClick={handleSubmit}
                                     disabled={Object.keys(answers).length < quiz.questions.filter(q => q.type !== "short").length}
-                                    className="flex items-center gap-1 text-sm bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 text-white px-4 py-1.5 rounded-lg font-semibold transition-all"
+                                    title={
+                                        Object.keys(answers).length < quiz.questions.filter(q => q.type !== "short").length
+                                            ? `Answer ${quiz.questions.filter(q => q.type !== "short").length - Object.keys(answers).length} more question(s) to submit`
+                                            : "Submit your answers"
+                                    }
+                                    className="flex items-center gap-1 text-sm bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded-lg font-semibold transition-all"
                                 >
                                     Submit Quiz
                                 </button>
@@ -223,6 +228,29 @@ export default function QuizGen({ params }: { params: Promise<{ courseId: string
                             {quiz.questions.some(q => q.type === "short") && (
                                 <p className="text-xs text-gray-400 mt-1">Short answer questions are self-graded</p>
                             )}
+                        </div>
+                    )}
+
+                    {/* Scoring legend */}
+                    {!submitted && quiz.questions.some(q => q.type === "short") && (
+                        <div className="text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 flex items-center gap-2">
+                            <span className="font-semibold">Note:</span> Multiple choice & true/false are auto-scored. Short answer questions are self-evaluated.
+                        </div>
+                    )}
+
+                    {/* Progress bar */}
+                    {!submitted && (
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
+                                <span>{Object.keys(answers).length} of {quiz.questions.filter(q => q.type !== "short").length} answered</span>
+                                <span>{quiz.questions.length} questions total</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-purple-500 rounded-full transition-all duration-300"
+                                    style={{ width: `${(Object.keys(answers).length / Math.max(quiz.questions.filter(q => q.type !== "short").length, 1)) * 100}%` }}
+                                />
+                            </div>
                         </div>
                     )}
 

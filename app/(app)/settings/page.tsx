@@ -32,7 +32,7 @@ export default function SettingsPage() {
         try {
             await updateDisplayName(displayName.trim());
             setNameSuccess(true);
-            setTimeout(() => setNameSuccess(false), 3000);
+            setTimeout(() => setNameSuccess(false), 5000);
         } catch {
             setNameError("Failed to update display name. Please try again.");
         } finally {
@@ -82,7 +82,7 @@ export default function SettingsPage() {
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                             <Mail className="w-3.5 h-3.5" /> Email
                         </label>
-                        <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500 font-medium select-all">
+                        <div className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-400 font-medium select-all cursor-not-allowed">
                             {user.email}
                         </div>
                         <p className="text-xs text-gray-400 mt-1.5">Email cannot be changed.</p>
@@ -148,7 +148,7 @@ export default function SettingsPage() {
                     )}
                     <button
                         onClick={handlePasswordReset}
-                        disabled={resetLoading || resetSuccess}
+                        disabled={resetLoading}
                         className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                     >
                         {resetLoading ? (

@@ -107,8 +107,17 @@ export default function Dashboard() {
 
             {/* Courses Grid */}
             <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800">Your Courses</h2>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-800">Your Courses</h2>
+                      {!loadError && courses.length > 0 && (
+                        <p className="text-xs text-gray-400 font-medium mt-0.5">
+                          {filteredCourses.length === courses.length
+                            ? `${courses.length} course${courses.length !== 1 ? "s" : ""}`
+                            : `${filteredCourses.length} of ${courses.length} courses`}
+                        </p>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -157,9 +166,11 @@ export default function Dashboard() {
                 ) : (
                    <div className="space-y-4">
                         {filteredCourses.length === 0 && search ? (
-                            <p className="text-sm text-gray-400 text-center py-8">
-                                No courses match &ldquo;{search}&rdquo;
-                            </p>
+                            <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-10 text-center space-y-2">
+                                <Search className="w-8 h-8 text-gray-300 mx-auto" />
+                                <p className="font-semibold text-gray-600">No results for &ldquo;{search}&rdquo;</p>
+                                <p className="text-sm text-gray-400">Try a different search term.</p>
+                            </div>
                         ) : null}
                         {filteredCourses.map((course) => (
                             <div
@@ -197,9 +208,12 @@ export default function Dashboard() {
                                     <button
                                         onClick={() => handleDeleteCourse(course.id)}
                                         aria-label={`Delete course ${course.name}`}
-                                        className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
+                                        disabled={actionLoading === course.id}
+                                        className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition disabled:opacity-50"
                                     >
-                                        <Trash2 className="w-5 h-5" />
+                                        {actionLoading === course.id
+                                            ? <Loader2 className="w-5 h-5 animate-spin" />
+                                            : <Trash2 className="w-5 h-5" />}
                                     </button>
                                 </div>
                             </div>
