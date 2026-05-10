@@ -19,7 +19,7 @@ export default function Sidebar() {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
-  
+
   const currentCourseId = params.courseId as string | undefined;
 
   useEffect(() => {
@@ -33,15 +33,13 @@ export default function Sidebar() {
         setCourses([]);
       }
     });
-
     return () => unsubscribe();
   }, []);
 
   const handleCourseChange = (newCourseId: string) => {
     if (!newCourseId) return;
 
-    // Preserve the current feature when switching courses
-    let targetPath = `/course/${newCourseId}/agent-chat`; // Default
+    let targetPath = `/course/${newCourseId}/agent-chat`;
 
     if (currentCourseId && pathname === `/course/${currentCourseId}`) {
       targetPath = `/course/${newCourseId}`;
@@ -71,10 +69,11 @@ export default function Sidebar() {
 
   return (
     <div className="w-64 h-screen bg-gray-50 border-r flex flex-col font-sans">
+      {/* Header */}
       <div className="p-4 border-b bg-white">
         <div className="text-xl font-bold text-gray-900 mb-4 px-1">Edwin AI</div>
-        
-        {/* Course Selector Dropdown */}
+
+        {/* Course Selector */}
         {courses.length === 0 ? (
           <div className="text-xs text-gray-400 text-center px-2 py-2.5 bg-gray-50 rounded-lg border border-dashed border-gray-200 leading-relaxed">
             No courses yet —{" "}
@@ -103,29 +102,38 @@ export default function Sidebar() {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto py-4 space-y-1">
-        <SidebarItem 
-          href="/dashboard" 
-          label="Dashboard" 
-          active={pathname === "/dashboard"}
-          icon={<LayoutDashboard className="w-5 h-5" />}
-        />
-        
-        {currentCourseId && (
-          <>
-            <div className="my-4 px-4">
-              <div className="h-px bg-gray-200"></div>
-            </div>
-            
-            <div className="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-              Course Features
-            </div>
+      {/* Nav */}
+      <div className="flex-1 overflow-y-auto py-3 space-y-0.5">
+        {/* Dashboard — always visible */}
+        <div className="px-2">
+          <SidebarItem
+            href="/dashboard"
+            label="Dashboard"
+            active={pathname === "/dashboard"}
+            icon={<LayoutDashboard className="w-5 h-5" />}
+          />
+        </div>
 
-            <SidebarCourseItem courseId={currentCourseId} />
-          </>
-        )}
+        {/* Divider + Course section — always visible */}
+        <div className="pt-3 pb-1">
+          <div className="px-4 flex items-center justify-between mb-1">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+              Course
+            </span>
+            {!currentCourseId && (
+              <span className="text-[9px] font-semibold text-gray-300 uppercase tracking-wide">
+                Select above
+              </span>
+            )}
+          </div>
+
+          <div className={`px-2 relative ${!currentCourseId ? "opacity-40 pointer-events-none select-none" : ""}`}>
+            <SidebarCourseItem courseId={currentCourseId || "__none__"} />
+          </div>
+        </div>
       </div>
 
+      {/* Account Footer */}
       <div className="p-4 border-t bg-white">
         {user && (
           <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">

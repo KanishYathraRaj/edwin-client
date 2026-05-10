@@ -19,18 +19,21 @@ const COURSE_FEATURES = [
 
 export default function SidebarCourseItem({ courseId }: Props) {
   const pathname = usePathname();
+  const isPlaceholder = courseId === "__none__";
 
   return (
-    <div className="flex flex-col space-y-1">
+    <div className="flex flex-col space-y-0.5">
       {COURSE_FEATURES.map((feature) => (
         <SidebarItem
           key={feature.id || "overview"}
-          href={`/course/${courseId}${feature.id ? `/${feature.id}` : ""}`}
+          href={isPlaceholder ? "#" : `/course/${courseId}${feature.id ? `/${feature.id}` : ""}`}
           label={feature.label}
           active={
-            feature.id === ""
-              ? pathname === `/course/${courseId}`
-              : pathname.includes(`/${feature.id}`)
+            !isPlaceholder && (
+              feature.id === ""
+                ? pathname === `/course/${courseId}`
+                : pathname.includes(`/${feature.id}`)
+            )
           }
           icon={feature.icon}
         />
