@@ -3,6 +3,8 @@ import {
     signInWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
+    updateProfile,
+    sendPasswordResetEmail,
     User,
     UserCredential,
 } from "firebase/auth";
@@ -69,4 +71,20 @@ export function getCurrentUser(): User | null {
  */
 export function onAuthStateChange(callback: (user: User | null) => void) {
     return onAuthStateChanged(auth, callback);
+}
+
+/**
+ * Update the current user's display name
+ */
+export async function updateDisplayName(displayName: string): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("No authenticated user");
+    await updateProfile(user, { displayName });
+}
+
+/**
+ * Send a password reset email
+ */
+export async function sendPasswordReset(email: string): Promise<void> {
+    await sendPasswordResetEmail(auth, email);
 }

@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { BookOpen, Sparkles, ChevronRight, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
-import { getCourseDetails } from "@/lib/firebase/firestore";
+import { getCourseDetails, updateCompletedTopics } from "@/lib/firebase/firestore";
 import { apiPost } from "@/lib/api";
 
 interface Topic {
@@ -24,7 +24,9 @@ export default function LessonPlanner({ params }: {
     const { courseId } = use(params);
     const [user, setUser] = useState<User | null>(null);
     const [isPlanning, setIsPlanning] = useState(false);
+    const [planError, setPlanError] = useState("");
     const [syllabusData, setSyllabusData] = useState<SyllabusData | null>(null);
+    const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const unsubscribe = onAuthStateChange((user) => {
@@ -45,13 +47,25 @@ export default function LessonPlanner({ params }: {
                         setSyllabusData({ syllabus: data.lessonPlan });
                     }
                 }
+                if (data?.completedTopics) {
+                    setCompletedTopics(new Set(data.completedTopics));
+                }
             }
         }
         loadLessonPlan();
     }, [user, courseId]);
 
+    const handleToggleTopic = async (topic: string) => {
+        if (!user) return;
+        const next = new Set(completedTopics);
+        next.has(topic) ? next.delete(topic) : next.add(topic);
+        setCompletedTopics(next);
+        await updateCompletedTopics(user.uid, courseId, Array.from(next));
+    };
+
     const handleStartPlanning = async () => {
         if (!user) return;
+        setPlanError("");
         setIsPlanning(true);
         try {
             const data = await apiPost("/plan-lesson", { courseId });
@@ -64,7 +78,7 @@ export default function LessonPlanner({ params }: {
             }
         } catch (error) {
             console.error("Error planning lesson:", error);
-            alert("Failed to generate lesson plan. Please ensure you have uploaded a syllabus in the Resources page.");
+            setPlanError("Failed to generate lesson plan. Please ensure you have uploaded a syllabus in Resources.");
         } finally {
             setIsPlanning(false);
         }
@@ -107,7 +121,7 @@ export default function LessonPlanner({ params }: {
                             Edwin will analyze your course materials and create a structured list of topics.
                         </p>
                     </div>
-                    <button 
+                    <button
                         onClick={handleStartPlanning}
                         disabled={isPlanning}
                         className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-3 rounded-xl font-semibold transition-all active:scale-[0.98]"
@@ -124,13 +138,27 @@ export default function LessonPlanner({ params }: {
                             </>
                         )}
                     </button>
+                    {planError && <p className="text-sm text-red-600 font-medium">{planError}</p>}
                 </div>
             ) : (
                 <div className="space-y-6 text-left">
-                    <div className="flex items-center gap-2 text-green-600 mb-8">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span className="text-sm font-semibold uppercase tracking-wider">Plan Generated</span>
-                    </div>
+                    {(() => {
+                        const total = syllabusData.syllabus.reduce((acc, u) => acc + u.topics.length, 0);
+                        const done = completedTopics.size;
+                        return (
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-2 text-green-600">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <span className="text-sm font-semibold uppercase tracking-wider">Plan Generated</span>
+                                </div>
+                                {total > 0 && (
+                                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+                                        {done}/{total} topics covered
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     <div className="space-y-12">
                         {syllabusData.syllabus.map((unit, unitIdx) => (
@@ -145,23 +173,30 @@ export default function LessonPlanner({ params }: {
                                 </div>
                                 
                                 <ul className="grid gap-4 ml-1">
-                                    {unit.topics.map((topic, topicIdx) => (
+                                    {unit.topics.map((topic, topicIdx) => {
+                                        const done = completedTopics.has(topic);
+                                        return (
                                         <li key={topicIdx} className="flex items-start gap-3 group">
                                             <div className="flex items-center h-6">
                                                 <input
                                                     type="checkbox"
                                                     id={`topic-${unitIdx}-${topicIdx}`}
-                                                    className="peer w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                    checked={done}
+                                                    onChange={() => handleToggleTopic(topic)}
+                                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                                 />
                                             </div>
-                                            <label 
+                                            <label
                                                 htmlFor={`topic-${unitIdx}-${topicIdx}`}
-                                                className="text-gray-600 group-hover:text-gray-900 transition-colors leading-relaxed cursor-pointer peer-checked:line-through peer-checked:text-gray-400"
+                                                className={`transition-colors leading-relaxed cursor-pointer ${
+                                                    done ? "line-through text-gray-400" : "text-gray-600 group-hover:text-gray-900"
+                                                }`}
                                             >
                                                 {topic}
                                             </label>
                                         </li>
-                                    ))}
+                                        );
+                                    })}
                                 </ul>
                             </div>
                         ))}

@@ -271,7 +271,7 @@ function QuestionCard({
 }) {
     const isCorrect = (() => {
         if (!submitted) return null;
-        if (question.type === "mcq") return userAnswer === question.answer;
+        if (question.type === "mcq") return normalizeLetter(String(userAnswer ?? "")) === normalizeLetter(question.answer);
         if (question.type === "tf") return userAnswer === question.answer;
         return null;
     })();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, use } from "react";
-import { Send, User as Bot, Loader2, Plus, Mic, ArrowUp } from "lucide-react";
+import { Send, User as Bot, Loader2, Mic, MicOff, ArrowUp } from "lucide-react";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { getCourseChatHistory } from "@/lib/firebase/firestore";
@@ -26,8 +26,10 @@ export default function AgentChat({ params: paramsPromise }: {
     const [isHistoryLoading, setIsHistoryLoading] = useState(true);
     const [streamingMessage, setStreamingMessage] = useState("");
     const [user, setUser] = useState<User | null>(null);
+    const [isListening, setIsListening] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const historyLoadedRef = useRef(false);
+    const recognitionRef = useRef<any>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -58,6 +60,30 @@ export default function AgentChat({ params: paramsPromise }: {
     useEffect(() => {
         scrollToBottom();
     }, [messages, streamingMessage]);
+
+    const handleVoiceInput = () => {
+        if (isListening) {
+            recognitionRef.current?.stop();
+            return;
+        }
+        const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SR) return;
+        const recognition = new SR();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+        recognition.onstart = () => setIsListening(true);
+        recognition.onend = () => setIsListening(false);
+        recognition.onerror = () => setIsListening(false);
+        recognition.onresult = (event: any) => {
+            const transcript = Array.from(event.results as any[])
+                .map((r: any) => r[0].transcript)
+                .join("");
+            setInput(transcript);
+        };
+        recognitionRef.current = recognition;
+        recognition.start();
+    };
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -173,13 +199,6 @@ export default function AgentChat({ params: paramsPromise }: {
                         onSubmit={handleSendMessage}
                         className="relative flex items-center bg-[#f4f4f4] rounded-full px-4 py-1.5 border border-gray-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500"
                     >
-                        <button
-                            type="button"
-                            className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                        >
-                            <Plus className="w-5 h-5" />
-                        </button>
-                        
                         <input
                             type="text"
                             value={input}
@@ -192,14 +211,21 @@ export default function AgentChat({ params: paramsPromise }: {
                         <div className="flex items-center gap-1">
                             <button
                                 type="button"
-                                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                                onClick={handleVoiceInput}
+                                aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                                className={`p-2 rounded-full transition-all ${
+                                    isListening
+                                        ? "text-red-600 bg-red-50 animate-pulse"
+                                        : "text-gray-500 hover:text-gray-700"
+                                }`}
                             >
-                                <Mic className="w-5 h-5" />
+                                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                             </button>
-                            
+
                             <button
                                 type="submit"
                                 disabled={!input.trim() || isLoading}
+                                aria-label="Send message"
                                 className="bg-black hover:bg-gray-800 disabled:bg-gray-300 text-white p-2 rounded-full shadow-md transition-all active:scale-95 flex items-center justify-center flex-shrink-0"
                             >
                                 {isLoading ? (

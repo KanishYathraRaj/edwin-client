@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, use } from "react";
-import { FileText, Plus, Trash2, Save, FileUp, AlertCircle, Database, Upload, CheckCircle2 } from "lucide-react";
+import { FileText, Plus, Trash2, Save, FileUp, AlertCircle, Database, Upload, CheckCircle2, Check, X } from "lucide-react";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { getCourseDetails } from "@/lib/firebase/firestore";
@@ -26,6 +26,8 @@ export default function Resources({ params }: {
     
     // Track saving state per item ID or section
     const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
+    const [saveError, setSaveError] = useState("");
+    const [saveSuccess, setSaveSuccess] = useState("");
     const [user, setUser] = useState<User | null>(null);
 
     const syllabusInputRef = useRef<HTMLInputElement>(null);
@@ -92,8 +94,9 @@ export default function Resources({ params }: {
 
     const saveSyllabus = async () => {
         if (!syllabus) return;
+        setSaveError("");
         setSavingIds(prev => new Set(prev).add(syllabus.id));
-        
+
         try {
             const formData = new FormData();
             if (syllabus.file) {
@@ -107,11 +110,13 @@ export default function Resources({ params }: {
             }));
 
             await apiPostForm('/resource/upload_syllabus', formData);
-            
+
             setSyllabus(prev => prev ? { ...prev, status: 'saved' } : null);
+            setSaveSuccess("Syllabus saved successfully.");
+            setTimeout(() => setSaveSuccess(""), 3000);
         } catch (error) {
             console.error("Error saving syllabus:", error);
-            alert("Failed to save syllabus. See console for details.");
+            setSaveError("Failed to save syllabus. Please try again.");
         } finally {
             setSavingIds(prev => {
                 const next = new Set(prev);
@@ -136,8 +141,9 @@ export default function Resources({ params }: {
         const refToSave = references.find(r => r.id === id);
         if (!refToSave) return;
 
+        setSaveError("");
         setSavingIds(prev => new Set(prev).add(id));
-        
+
         try {
             const formData = new FormData();
             if (refToSave.file) {
@@ -151,13 +157,15 @@ export default function Resources({ params }: {
             }));
 
             await apiPostForm('/resource/upload_reference', formData);
-            
-            setReferences(prev => prev.map(ref => 
+
+            setReferences(prev => prev.map(ref =>
                 ref.id === id ? { ...ref, status: 'saved' } : ref
             ));
+            setSaveSuccess("Reference saved successfully.");
+            setTimeout(() => setSaveSuccess(""), 3000);
         } catch (error) {
             console.error("Error saving reference:", error);
-            alert("Failed to save reference. See console for details.");
+            setSaveError("Failed to save reference. Please try again.");
         } finally {
             setSavingIds(prev => {
                 const next = new Set(prev);
@@ -181,6 +189,19 @@ export default function Resources({ params }: {
 
     return (
         <div className="w-full p-6 space-y-8 font-sans">
+            {saveSuccess && (
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 px-4 py-2 bg-green-500 text-white text-sm font-semibold rounded-full shadow-lg pointer-events-none">
+                    <Check className="w-4 h-4" /> {saveSuccess}
+                </div>
+            )}
+            {saveError && (
+                <div className="flex items-center justify-between bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm font-medium border border-red-100">
+                    {saveError}
+                    <button onClick={() => setSaveError("")} className="ml-3 text-red-400 hover:text-red-600">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
              {/* Header */}
              <div className="pb-6 border-b border-gray-200">
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">

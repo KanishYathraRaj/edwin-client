@@ -26,12 +26,17 @@ interface SyllabusData {
     syllabus: Topic[];
 }
 
+function escapeHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function renderToHTML(md: string): string {
     const bold = (s: string) => s.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
     return md
         .split("\n")
         .map((line) => {
-            const t = line.trim();
+            const t = escapeHtml(line.trim());
             if (t.startsWith("## "))
                 return `<h2 style="font-size:15px;font-weight:700;color:#1e40af;margin:20px 0 6px;padding-bottom:4px;border-bottom:1px solid #e5e7eb">${bold(t.slice(3))}</h2>`;
             if (t.startsWith("# "))
@@ -129,7 +134,7 @@ export default function ContentPrep({
         const bold = (s: string) => s.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
         for (const line of lines) {
-            const t = line.trim();
+            const t = escapeHtml(line.trim());
             if (t.startsWith("## ")) htmlContent += `<h2>${bold(t.slice(3))}</h2>`;
             else if (t.startsWith("# ")) htmlContent += `<h1>${bold(t.slice(2))}</h1>`;
             else if (/^\d+\.\s/.test(t))
@@ -372,6 +377,7 @@ export default function ContentPrep({
                     <div className="absolute top-4 right-4 z-40">
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            aria-label="Open actions menu"
                             className="bg-white hover:bg-gray-100 text-gray-700 p-2.5 rounded-full shadow-sm border border-gray-200 transition-all flex items-center justify-center"
                         >
                             <MoreVertical className="w-5 h-5" />
@@ -543,12 +549,12 @@ export default function ContentPrep({
                                     <button
                                         type="submit"
                                         disabled={isGenerating || selectedTopicNames.length === 0}
+                                        aria-label="Generate content"
                                         className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 ${
                                             selectedTopicNames.length > 0 && !isGenerating
                                                 ? "bg-[#D1D5DB] text-gray-700 hover:bg-gray-300 shadow-sm"
                                                 : "bg-[#e4e4e7] text-gray-400"
                                         }`}
-                                        title="Generate Content"
                                     >
                                         {isGenerating ? (
                                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -574,6 +580,7 @@ export default function ContentPrep({
                             </h3>
                             <button
                                 onClick={() => setIsOpenerOpen(false)}
+                                aria-label="Close"
                                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
                             >
                                 <X className="w-5 h-5" />

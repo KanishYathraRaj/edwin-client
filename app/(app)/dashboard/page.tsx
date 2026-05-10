@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { getUserCourses, createCourse, deleteCourse, Course } from "@/lib/firebase/firestore";
 import { User } from "firebase/auth";
-import { Plus, Trash2, BookOpen, ArrowRight, Loader2 } from "lucide-react";
+import { Plus, Trash2, BookOpen, ArrowRight, Loader2, Search, SortAsc } from "lucide-react";
 import Link from "next/link";
 
 export default function Dashboard() {
@@ -15,13 +15,20 @@ export default function Dashboard() {
     const [newCourseTitle, setNewCourseTitle] = useState("");
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [createError, setCreateError] = useState("");
+    const [loadError, setLoadError] = useState("");
+    const [search, setSearch] = useState("");
+    const [sortOrder, setSortOrder] = useState<"recent" | "alpha">("recent");
 
     useEffect(() => {
         const unsubscribe = onAuthStateChange(async (currentUser) => {
             setUser(currentUser);
             if (currentUser) {
-                const fetchedCourses = await getUserCourses(currentUser.uid);
-                setCourses(fetchedCourses);
+                try {
+                    const fetchedCourses = await getUserCourses(currentUser.uid);
+                    setCourses(fetchedCourses);
+                } catch {
+                    setLoadError("Failed to load your courses. Please refresh.");
+                }
             }
             setLoading(false);
         });
@@ -64,6 +71,13 @@ export default function Dashboard() {
         setActionLoading(null);
     };
 
+    const filteredCourses = courses
+        .filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+        .sort((a, b) => {
+            if (sortOrder === "alpha") return a.name.localeCompare(b.name);
+            return (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0);
+        });
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -93,14 +107,40 @@ export default function Dashboard() {
 
             {/* Courses Grid */}
             <div>
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                     <h2 className="text-2xl font-bold text-gray-800">Your Courses</h2>
-                    <span className="bg-gray-100 px-3 py-1 rounded-full text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Recent
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            <input
+                                type="text"
+                                placeholder="Search courses..."
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                className="pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all w-52"
+                            />
+                        </div>
+                        <div className="relative">
+                            <SortAsc className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            <select
+                                value={sortOrder}
+                                onChange={e => setSortOrder(e.target.value as "recent" | "alpha")}
+                                className="pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none cursor-pointer"
+                            >
+                                <option value="recent">Recent</option>
+                                <option value="alpha">A–Z</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                {courses.length === 0 ? (
+                {loadError && (
+                    <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm font-medium border border-red-100 mb-4">
+                        {loadError}
+                    </div>
+                )}
+
+                {courses.length === 0 && !loadError ? (
                     <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl p-12 text-center">
                         <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-gray-400">
                             <BookOpen className="w-8 h-8" />
@@ -116,25 +156,30 @@ export default function Dashboard() {
                     </div>
                 ) : (
                    <div className="space-y-4">
-                        {courses.map((course, index) => (
+                        {filteredCourses.length === 0 && search ? (
+                            <p className="text-sm text-gray-400 text-center py-8">
+                                No courses match &ldquo;{search}&rdquo;
+                            </p>
+                        ) : null}
+                        {filteredCourses.map((course) => (
                             <div
                                 key={course.id}
                                 className="flex items-center justify-between p-5 rounded-2xl bg-white/80 backdrop-blur border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-[2px] transition-all duration-200 group"
                             >
                                 {/* LEFT */}
                                 <div className="flex items-center gap-4">
-                                    {/* Icon */}
                                     <div className="w-12 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center font-semibold shadow-sm">
                                         {course.name.charAt(0).toUpperCase()}
                                     </div>
 
-                                    {/* Info */}
                                     <div>
                                         <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition">
                                             {course.name}
                                         </h3>
                                         <p className="text-xs text-gray-400 mt-0.5">
-                                            Last accessed recently
+                                            {course.createdAt
+                                                ? `Created ${course.createdAt.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}`
+                                                : "Created recently"}
                                         </p>
                                     </div>
                                 </div>
@@ -151,6 +196,7 @@ export default function Dashboard() {
 
                                     <button
                                         onClick={() => handleDeleteCourse(course.id)}
+                                        aria-label={`Delete course ${course.name}`}
                                         className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
                                     >
                                         <Trash2 className="w-5 h-5" />

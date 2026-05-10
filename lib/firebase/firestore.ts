@@ -4,6 +4,7 @@ import { db } from "./firebase";
 export interface Course {
     id: string;
     name: string;
+    createdAt?: Date;
 }
 
 /**
@@ -19,12 +20,16 @@ export async function getUserCourses(userId: string): Promise<Course[]> {
 
         const courses: Course[] = [];
         querySnapshot.forEach((doc) => {
+            const data = doc.data();
             courses.push({
                 id: doc.id,
-                name: doc.data().title || "Untitled Course",
+                name: data.title || "Untitled Course",
+                createdAt: data.createdAt?.toDate?.() ?? undefined,
             });
         });
 
+        // Newest first
+        courses.sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
         return courses;
     } catch (error) {
         console.error("Error fetching courses:", error);
@@ -191,6 +196,20 @@ export async function deletePreparedContent(userId: string, courseId: string, co
         return true;
     } catch (error) {
         console.error("Error deleting prepared content:", error);
+        return false;
+    }
+}
+
+/**
+ * Persist the set of completed topic labels for a course's lesson plan
+ */
+export async function updateCompletedTopics(userId: string, courseId: string, completedTopics: string[]): Promise<boolean> {
+    try {
+        const { doc, updateDoc } = await import("firebase/firestore");
+        await updateDoc(doc(db, "users", userId, "courses", courseId), { completedTopics });
+        return true;
+    } catch (error) {
+        console.error("Error updating completed topics:", error);
         return false;
     }
 }

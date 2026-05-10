@@ -40,10 +40,12 @@ export default function Sidebar() {
   const handleCourseChange = (newCourseId: string) => {
     if (!newCourseId) return;
 
-    // Determine target path based on current feature
+    // Preserve the current feature when switching courses
     let targetPath = `/course/${newCourseId}/agent-chat`; // Default
 
-    if (pathname.includes("/lesson-planner")) {
+    if (currentCourseId && pathname === `/course/${currentCourseId}`) {
+      targetPath = `/course/${newCourseId}`;
+    } else if (pathname.includes("/lesson-planner")) {
       targetPath = `/course/${newCourseId}/lesson-planner`;
     } else if (pathname.includes("/content-prep")) {
       targetPath = `/course/${newCourseId}/content-prep`;
