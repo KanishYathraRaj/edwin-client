@@ -44,6 +44,12 @@ export async function apiPostForm(path: string, form: FormData) {
     return handleResponse(res);
 }
 
+export async function apiGet(path: string) {
+    const headers = await authHeaders();
+    const res = await fetch(`${BASE_URL}${path}`, { method: 'GET', headers });
+    return handleResponse(res);
+}
+
 export async function apiDelete(path: string) {
     const headers = await authHeaders();
     const res = await fetch(`${BASE_URL}${path}`, { method: 'DELETE', headers });
