@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import {
     MessageSquare, BookOpen, FileText, BrainCircuit,
     Database, HelpCircle, CheckCircle2, ArrowRight,
-    Loader2, Sparkles, LayoutGrid, Trash2, Pencil, X, Check,
+    Sparkles, LayoutGrid, Trash2, Pencil, X, Check, Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -158,8 +158,23 @@ export default function CourseOverview({ params }: { params: Promise<{ courseId:
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            <div className="max-w-4xl mx-auto px-6 py-8 space-y-8 animate-pulse">
+                <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                        <div className="w-14 h-14 bg-gray-200 rounded-2xl flex-shrink-0" />
+                        <div className="space-y-2 pt-1">
+                            <div className="h-6 bg-gray-200 rounded-lg w-52" />
+                            <div className="h-3.5 bg-gray-100 rounded w-36" />
+                        </div>
+                    </div>
+                    <div className="h-8 w-20 bg-gray-100 rounded-xl mt-1" />
+                </div>
+                <div className="h-24 bg-gray-100 rounded-2xl" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-28 bg-gray-100 rounded-2xl" />
+                    ))}
+                </div>
             </div>
         );
     }
@@ -184,6 +199,7 @@ export default function CourseOverview({ params }: { params: Promise<{ courseId:
             const { db } = await import("@/lib/firebase/firebase");
             await updateDoc(doc(db, "users", user.uid, "courses", courseId), { title: editTitle.trim() });
             setStats(prev => prev ? { ...prev, title: editTitle.trim() } : prev);
+            window.dispatchEvent(new CustomEvent("course-renamed", { detail: { courseId, title: editTitle.trim() } }));
         } catch (e) { console.error(e); }
         setIsEditingTitle(false);
     };

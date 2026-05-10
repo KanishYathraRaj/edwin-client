@@ -131,10 +131,29 @@ export default function AgentChat({ params: paramsPromise }: {
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 pb-4">
                 <div className="max-w-4xl mx-auto w-full space-y-6">
                     {isHistoryLoading ? (
-                        <div className="h-full flex items-center justify-center min-h-[400px]">
-                            <div className="flex flex-col items-center gap-2">
-                                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                                <p className="text-sm text-gray-500 font-medium">Loading previous chats...</p>
+                        <div className="space-y-6 animate-pulse min-h-[400px] pt-2">
+                            <div className="flex gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0" />
+                                <div className="space-y-2 max-w-sm flex-1">
+                                    <div className="h-4 bg-gray-200 rounded-lg w-full" />
+                                    <div className="h-4 bg-gray-200 rounded-lg w-4/5" />
+                                </div>
+                            </div>
+                            <div className="flex gap-3 justify-end">
+                                <div className="h-4 bg-gray-100 rounded-lg w-40" />
+                            </div>
+                            <div className="flex gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0" />
+                                <div className="space-y-2 max-w-md flex-1">
+                                    <div className="h-4 bg-gray-200 rounded-lg w-full" />
+                                    <div className="h-4 bg-gray-200 rounded-lg w-2/3" />
+                                    <div className="h-4 bg-gray-200 rounded-lg w-5/6" />
+                                </div>
+                            </div>
+                            <div className="flex gap-3 justify-end">
+                                <div className="space-y-2 max-w-xs">
+                                    <div className="h-4 bg-gray-100 rounded-lg w-32" />
+                                </div>
                             </div>
                         </div>
                     ) : (

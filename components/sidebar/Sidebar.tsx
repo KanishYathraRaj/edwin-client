@@ -35,6 +35,15 @@ export default function Sidebar({ onToggle }: Props) {
         return () => unsubscribe();
     }, []);
 
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const { courseId, title } = (e as CustomEvent).detail;
+            setCourses(prev => prev.map(c => c.id === courseId ? { ...c, name: title } : c));
+        };
+        window.addEventListener("course-renamed", handler);
+        return () => window.removeEventListener("course-renamed", handler);
+    }, []);
+
     const handleLogout = async () => {
         try {
             await signOutUser();
