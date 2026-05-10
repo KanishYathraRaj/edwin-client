@@ -4,12 +4,13 @@ import { useState, useEffect, use } from "react";
 import {
     MessageSquare, BookOpen, FileText, BrainCircuit,
     Database, HelpCircle, CheckCircle2, ArrowRight,
-    Loader2, Sparkles, LayoutGrid,
+    Loader2, Sparkles, LayoutGrid, Trash2, Pencil, X, Check,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { onAuthStateChange } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
-import { getCourseDetails, getSavedPreparedContent } from "@/lib/firebase/firestore";
+import { getCourseDetails, getSavedPreparedContent, deleteCourse } from "@/lib/firebase/firestore";
 import { apiGet } from "@/lib/api";
 
 interface CourseStats {
@@ -106,9 +107,13 @@ const PROGRESS_STEPS = FEATURE_CARDS.filter(f => f.id !== "quiz-gen");
 
 export default function CourseOverview({ params }: { params: Promise<{ courseId: string }> }) {
     const { courseId } = use(params);
+    const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [stats, setStats] = useState<CourseStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editTitle, setEditTitle] = useState("");
 
     useEffect(() => {
         const unsub = onAuthStateChange(u => setUser(u));
@@ -161,6 +166,28 @@ export default function CourseOverview({ params }: { params: Promise<{ courseId:
 
     if (!stats) return null;
 
+    const handleDelete = async () => {
+        if (!user) return;
+        if (!confirm(`Delete "${stats.title}"? This cannot be undone.`)) return;
+        setIsDeleting(true);
+        await deleteCourse(user.uid, courseId);
+        router.push("/");
+    };
+
+    const handleRenameSubmit = async () => {
+        if (!user || !editTitle.trim() || editTitle.trim() === stats.title) {
+            setIsEditingTitle(false);
+            return;
+        }
+        try {
+            const { doc, updateDoc } = await import("firebase/firestore");
+            const { db } = await import("@/lib/firebase/firebase");
+            await updateDoc(doc(db, "users", user.uid, "courses", courseId), { title: editTitle.trim() });
+            setStats(prev => prev ? { ...prev, title: editTitle.trim() } : prev);
+        } catch (e) { console.error(e); }
+        setIsEditingTitle(false);
+    };
+
     const completedSteps = PROGRESS_STEPS.filter(f => f.isDone(stats)).length;
     const totalSteps = PROGRESS_STEPS.length;
     const progressPct = Math.round((completedSteps / totalSteps) * 100);
@@ -170,21 +197,54 @@ export default function CourseOverview({ params }: { params: Promise<{ courseId:
         <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
 
             {/* Course header */}
-            <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-blue-200 flex-shrink-0">
-                    {stats.title.charAt(0).toUpperCase()}
+            <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 min-w-0">
+                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-blue-200 flex-shrink-0">
+                        {stats.title.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                        {isEditingTitle ? (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    autoFocus
+                                    value={editTitle}
+                                    onChange={e => setEditTitle(e.target.value)}
+                                    onKeyDown={e => { if (e.key === "Enter") handleRenameSubmit(); if (e.key === "Escape") setIsEditingTitle(false); }}
+                                    className="text-xl font-bold bg-white border border-blue-400 rounded-lg px-3 py-1 outline-none focus:ring-2 focus:ring-blue-200 w-64"
+                                />
+                                <button onClick={handleRenameSubmit} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"><Check className="w-4 h-4" /></button>
+                                <button onClick={() => setIsEditingTitle(false)} className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
+                            </div>
+                        ) : (
+                            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 group">
+                                <span className="truncate">{stats.title}</span>
+                                <button
+                                    onClick={() => { setEditTitle(stats.title); setIsEditingTitle(true); }}
+                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                                    aria-label="Rename course"
+                                >
+                                    <Pencil className="w-4 h-4" />
+                                </button>
+                            </h1>
+                        )}
+                        {stats.createdAt && (
+                            <p className="text-sm text-gray-400 mt-0.5">
+                                Created {stats.createdAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                            </p>
+                        )}
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        {stats.title}
-                        <LayoutGrid className="w-5 h-5 text-gray-300" />
-                    </h1>
-                    {stats.createdAt && (
-                        <p className="text-sm text-gray-400 mt-0.5">
-                            Created {stats.createdAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-                        </p>
-                    )}
-                </div>
+
+                {/* Delete */}
+                <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    aria-label="Delete course"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50 flex-shrink-0 mt-1"
+                >
+                    {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    Delete
+                </button>
             </div>
 
             {/* Progress card */}

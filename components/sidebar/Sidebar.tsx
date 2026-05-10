@@ -1,169 +1,102 @@
 "use client";
+
 import { useState, useEffect } from "react";
-import SidebarItem from "./SidebarItem";
 import SidebarCourseItem from "./SidebarCourseItem";
+import CourseSwitcher from "./CourseSwitcher";
 import Link from "next/link";
 import { onAuthStateChange, signOutUser } from "@/lib/firebase/auth";
 import { User } from "firebase/auth";
 import { useRouter, useParams, usePathname } from "next/navigation";
-import { ChevronDown, LayoutDashboard, Settings, LogOut } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 
-interface Course {
-  id: string;
-  name: string;
-}
+interface Course { id: string; name: string; }
 
 export default function Sidebar() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [user, setUser] = useState<User | null>(null);
-  const router = useRouter();
-  const params = useParams();
-  const pathname = usePathname();
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [user, setUser] = useState<User | null>(null);
+    const router = useRouter();
+    const params = useParams();
+    const pathname = usePathname();
 
-  const currentCourseId = params.courseId as string | undefined;
+    const currentCourseId = params.courseId as string | undefined;
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChange(async (user) => {
-      setUser(user);
-      if (user) {
-        const { getUserCourses } = await import("@/lib/firebase/firestore");
-        const userCourses = await getUserCourses(user.uid);
-        setCourses(userCourses);
-      } else {
-        setCourses([]);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+    useEffect(() => {
+        const unsubscribe = onAuthStateChange(async (u) => {
+            setUser(u);
+            if (u) {
+                const { getUserCourses } = await import("@/lib/firebase/firestore");
+                setCourses(await getUserCourses(u.uid));
+            } else {
+                setCourses([]);
+            }
+        });
+        return () => unsubscribe();
+    }, []);
 
-  const handleCourseChange = (newCourseId: string) => {
-    if (!newCourseId) return;
+    const handleLogout = async () => {
+        try {
+            await signOutUser();
+            router.push("/auth");
+        } catch (e) {
+            console.error("Logout failed:", e);
+        }
+    };
 
-    let targetPath = `/course/${newCourseId}/agent-chat`;
-
-    if (currentCourseId && pathname === `/course/${currentCourseId}`) {
-      targetPath = `/course/${newCourseId}`;
-    } else if (pathname.includes("/lesson-planner")) {
-      targetPath = `/course/${newCourseId}/lesson-planner`;
-    } else if (pathname.includes("/content-prep")) {
-      targetPath = `/course/${newCourseId}/content-prep`;
-    } else if (pathname.includes("/quiz-gen")) {
-      targetPath = `/course/${newCourseId}/quiz-gen`;
-    } else if (pathname.includes("/question-bank")) {
-      targetPath = `/course/${newCourseId}/question-bank`;
-    } else if (pathname.includes("/resources")) {
-      targetPath = `/course/${newCourseId}/resources`;
-    }
-
-    router.push(targetPath);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOutUser();
-      router.push("/auth");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
-  return (
-    <div className="w-64 h-screen bg-gray-50 border-r flex flex-col font-sans">
-      {/* Header */}
-      <div className="p-4 border-b bg-white">
-        <div className="text-xl font-bold text-gray-900 mb-4 px-1">Edwin AI</div>
-
-        {/* Course Selector */}
-        {courses.length === 0 ? (
-          <div className="text-xs text-gray-400 text-center px-2 py-2.5 bg-gray-50 rounded-lg border border-dashed border-gray-200 leading-relaxed">
-            No courses yet —{" "}
-            <Link href="/dashboard" className="font-semibold text-blue-600 hover:underline">
-              create one
-            </Link>
-          </div>
-        ) : (
-          <div className="relative">
-            <select
-              value={currentCourseId || ""}
-              onChange={(e) => handleCourseChange(e.target.value)}
-              className="w-full appearance-none bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 pr-8 font-medium cursor-pointer"
-            >
-              <option value="" disabled>Select a Course</option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.name}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-              <ChevronDown className="w-4 h-4" />
+    return (
+        <div className="w-64 h-screen bg-gray-50 border-r flex flex-col font-sans">
+            {/* Header */}
+            <div className="px-4 pt-5 pb-4 border-b bg-white space-y-3">
+                <p className="text-lg font-extrabold text-gray-900 tracking-tight px-1">Edwin AI</p>
+                <CourseSwitcher
+                    courses={courses}
+                    currentCourseId={currentCourseId}
+                    userId={user?.uid ?? ""}
+                    onCourseCreated={(course) => setCourses(prev => [course, ...prev])}
+                />
             </div>
-          </div>
-        )}
-      </div>
 
-      {/* Nav */}
-      <div className="flex-1 overflow-y-auto py-3 space-y-0.5">
-        {/* Dashboard — always visible */}
-        <div className="px-2">
-          <SidebarItem
-            href="/dashboard"
-            label="Dashboard"
-            active={pathname === "/dashboard"}
-            icon={<LayoutDashboard className="w-5 h-5" />}
-          />
-        </div>
-
-        {/* Divider + Course section — always visible */}
-        <div className="pt-3 pb-1">
-          <div className="px-4 flex items-center justify-between mb-1">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              Course
-            </span>
-            {!currentCourseId && (
-              <span className="text-[9px] font-semibold text-gray-300 uppercase tracking-wide">
-                Select above
-              </span>
-            )}
-          </div>
-
-          <div className={`px-2 relative ${!currentCourseId ? "opacity-40 pointer-events-none select-none" : ""}`}>
-            <SidebarCourseItem courseId={currentCourseId || "__none__"} />
-          </div>
-        </div>
-      </div>
-
-      {/* Account Footer */}
-      <div className="p-4 border-t bg-white">
-        {user && (
-          <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Account</p>
-              <div className="flex items-center gap-0.5">
-                <Link
-                  href="/settings"
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                  title="Settings"
-                  aria-label="Settings"
-                >
-                  <Settings className="w-4 h-4" />
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                  title="Log Out"
-                  aria-label="Log out"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
+            {/* Nav */}
+            <div className="flex-1 overflow-y-auto py-3">
+                <div className="px-3 mb-1">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1 mb-1.5 flex items-center justify-between">
+                        <span>Course</span>
+                        {!currentCourseId && <span className="text-[9px] text-gray-300">Select above</span>}
+                    </p>
+                    <div className={`transition-opacity duration-200 ${!currentCourseId ? "opacity-40 pointer-events-none select-none" : ""}`}>
+                        <SidebarCourseItem courseId={currentCourseId || "__none__"} />
+                    </div>
+                </div>
             </div>
-            <p className="text-xs font-semibold text-gray-700 truncate" title={user.email || ""}>
-              {user.email}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+
+            {/* Account Footer */}
+            <div className="p-4 border-t bg-white">
+                {user && (
+                    <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
+                        <div className="flex items-center justify-between mb-1.5">
+                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Account</p>
+                            <div className="flex items-center gap-0.5">
+                                <Link
+                                    href="/settings"
+                                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                    aria-label="Settings"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                    aria-label="Log out"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                        <p className="text-xs font-semibold text-gray-700 truncate" title={user.email || ""}>
+                            {user.email}
+                        </p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }
